@@ -1,0 +1,13 @@
+{
+  "heading": "Software Update Available",
+  "message": "A new version of Company VPN has been downloaded and is ready to install. Installation takes about 2 minutes.",
+  "title": "IT Department",
+  "accentColor": "#76B900",
+  "timeout": 600,
+  "timeoutValue": "install",
+  "escValue": "defer_4h",
+  "buttons": [
+    {"label": "Remind Me Later", "value": "defer_4h", "style": "secondary"},
+    {"label": "Install Now", "value": "install", "style": "primary"}
+  ]
+}

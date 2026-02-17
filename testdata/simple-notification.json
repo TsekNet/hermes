@@ -1,0 +1,9 @@
+{
+  "heading": "Maintenance Window",
+  "message": "Scheduled maintenance begins in 30 minutes. Please save your work.",
+  "timeout": 60,
+  "timeoutValue": "dismiss",
+  "buttons": [
+    {"label": "Got it", "value": "dismiss", "style": "primary"}
+  ]
+}

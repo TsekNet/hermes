@@ -1,0 +1,22 @@
+{
+  "heading": "System Restart Required",
+  "message": "Your computer needs to restart to apply security updates. Please save your work and close all applications.",
+  "title": "IT Department",
+  "accentColor": "#0078D4",
+  "timeout": 300,
+  "timeoutValue": "restart",
+  "escValue": "defer_1h",
+  "helpUrl": "https://help.example.com/restart",
+  "buttons": [
+    {
+      "label": "Defer",
+      "style": "secondary",
+      "dropdown": [
+        {"label": "1 Hour", "value": "defer_1h"},
+        {"label": "4 Hours", "value": "defer_4h"},
+        {"label": "1 Day", "value": "defer_1d"}
+      ]
+    },
+    {"label": "Restart Now", "value": "restart", "style": "primary"}
+  ]
+}

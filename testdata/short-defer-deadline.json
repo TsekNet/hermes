@@ -1,0 +1,15 @@
+{
+  "heading": "VPN Maintenance",
+  "message": "VPN will disconnect. This notification auto-actions in 1 minute.",
+  "title": "Network Team",
+  "accentColor": "#E74C3C",
+  "timeout": 20,
+  "timeoutValue": "disconnect",
+  "deferDeadline": "1m",
+  "maxDefers": 2,
+  "helpUrl": "https://help.example.com/vpn",
+  "buttons": [
+    {"label": "Defer 15s", "value": "defer_15s", "style": "secondary"},
+    {"label": "Disconnect Now", "value": "disconnect", "style": "danger"}
+  ]
+}

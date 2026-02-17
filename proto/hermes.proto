@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package hermes;
+
+option go_package = "github.com/TsekNet/hermes/proto/hermespb";
+
+// HermesService manages notification lifecycles. The service daemon
+// (hermes serve) implements this; CLI commands and UI subprocesses
+// are clients.
+service HermesService {
+  // Notify sends a notification and blocks until the user responds,
+  // the notification times out, or the deferral deadline expires.
+  // Called by: hermes notify / hermes --config
+  rpc Notify(NotifyRequest) returns (NotifyResponse);
+
+  // GetUIConfig returns the notification config for a UI subprocess.
+  // Called by: the Wails UI process on startup.
+  rpc GetUIConfig(GetUIConfigRequest) returns (GetUIConfigResponse);
+
+  // ReportChoice reports the user's button click or timeout from the UI.
+  // Called by: the Wails UI process on user interaction.
+  rpc ReportChoice(ReportChoiceRequest) returns (ReportChoiceResponse);
+
+  // Cancel cancels an active notification by ID.
+  // Called by: hermes cancel <id>
+  rpc Cancel(CancelRequest) returns (CancelResponse);
+
+  // List returns all active (pending/deferred) notifications.
+  // Called by: hermes list
+  rpc List(ListRequest) returns (ListResponse);
+}
+
+// --- Notify ---
+
+message NotifyRequest {
+  // Unique notification ID. Auto-generated if empty.
+  string id = 1;
+
+  // JSON-encoded NotificationConfig. The service deserializes it
+  // to detect buttons, timeouts, and deferral settings.
+  bytes config_json = 2;
+}
+
+message NotifyResponse {
+  // The user's response value (e.g. "restart", "defer_4h", "timeout:restart").
+  string value = 1;
+
+  // Exit code the CLI should use (mirrors cmd exit constants).
+  int32 exit_code = 2;
+
+  // Human-readable error message, if any.
+  string error = 3;
+}
+
+// --- GetUIConfig ---
+
+message GetUIConfigRequest {
+  // Notification ID assigned by the service.
+  string notification_id = 1;
+}
+
+message GetUIConfigResponse {
+  // JSON-encoded NotificationConfig for the UI to render.
+  bytes config_json = 1;
+
+  // Whether the user is still allowed to defer (deadline not passed, defers remaining).
+  bool deferral_allowed = 2;
+}
+
+// --- ReportChoice ---
+
+message ReportChoiceRequest {
+  // Notification ID this choice belongs to.
+  string notification_id = 1;
+
+  // The value from the button click or timeout (e.g. "restart", "defer_4h", "timeout:restart").
+  string value = 2;
+}
+
+message ReportChoiceResponse {
+  // True if the service accepted the choice (first responder wins).
+  bool accepted = 1;
+}
+
+// --- Cancel ---
+
+message CancelRequest {
+  string notification_id = 1;
+}
+
+message CancelResponse {
+  bool found = 1;
+}
+
+// --- List ---
+
+message ListRequest {}
+
+message ListResponse {
+  repeated NotificationInfo notifications = 1;
+}
+
+message NotificationInfo {
+  string id = 1;
+  string heading = 2;
+  string state = 3; // "pending", "deferred", "awaiting_response"
+  int32 defer_count = 4;
+  int64 deadline_unix = 5; // 0 = no deadline
+  int64 created_unix = 6;
+}

@@ -1,0 +1,22 @@
+{
+  "heading": "VPN Disconnecting",
+  "message": "Your VPN session will be disconnected for network maintenance. Reconnect after the maintenance window.",
+  "title": "Network Team",
+  "accentColor": "#E74C3C",
+  "timeout": 120,
+  "timeoutValue": "disconnect",
+  "escValue": "defer_1h",
+  "helpUrl": "https://help.example.com/vpn-maintenance",
+  "buttons": [
+    {
+      "label": "Defer",
+      "style": "secondary",
+      "dropdown": [
+        {"label": "15 Minutes", "value": "defer_15m"},
+        {"label": "1 Hour", "value": "defer_1h"},
+        {"label": "4 Hours", "value": "defer_4h"}
+      ]
+    },
+    {"label": "Disconnect Now", "value": "disconnect", "style": "danger"}
+  ]
+}

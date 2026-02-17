@@ -1,0 +1,27 @@
+# Binaries
+/hermes
+/hermes.exe
+/hermes_*
+build/bin/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+cover.out
+coverage.out
+coverage.txt
+
+# Wails
+frontend/wailsjs/
+
+# Node
+node_modules/

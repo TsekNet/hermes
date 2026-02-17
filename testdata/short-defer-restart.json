@@ -1,0 +1,23 @@
+{
+  "heading": "Restart Required",
+  "message": "Security updates need a restart. Short deferral window for testing.",
+  "title": "IT Department",
+  "accentColor": "#0078D4",
+  "timeout": 30,
+  "timeoutValue": "restart",
+  "escValue": "defer_10s",
+  "deferDeadline": "2m",
+  "maxDefers": 3,
+  "buttons": [
+    {
+      "label": "Defer",
+      "style": "secondary",
+      "dropdown": [
+        {"label": "10 Seconds", "value": "defer_10s"},
+        {"label": "30 Seconds", "value": "defer_30s"},
+        {"label": "1 Minute", "value": "defer_1m"}
+      ]
+    },
+    {"label": "Restart Now", "value": "restart", "style": "primary"}
+  ]
+}
