@@ -1,9 +1,5 @@
 # Usage
 
-**[← Wiki Home](Home)** · [Architecture](Architecture) · [Development](Development) · [Platforms](Platforms)
-
----
-
 ## Service mode (recommended)
 
 Start the per-user service daemon, then submit notifications via CLI. The service manages the full lifecycle: UI launch, deferrals, and deadlines.
@@ -126,7 +122,7 @@ When using the service daemon, configure deferrals to control how long and how m
 }
 ```
 
-Defer values must match the pattern `defer_Xh`, `defer_Xd`, `defer_Xm` or `defer_Xs` (hours, days, minutes, seconds). The service parses these to schedule re-notification. Deferral state is persisted to disk so notifications survive service restarts (see [Architecture — Persistence](Architecture#persistence)).
+Defer values must match the pattern `defer_Xh`, `defer_Xd`, `defer_Xm` or `defer_Xs` (hours, days, minutes, seconds). The service parses these to schedule re-notification. Deferral state is persisted to disk so notifications survive service restarts (see [Architecture — Persistence](architecture.md#persistence)).
 
 When `maxDefers` is reached or `deferDeadline` has passed, hermes automatically hides any buttons (or dropdown options) that trigger a deferral. If a button has no other action (e.g. it was purely a defer button), it is removed entirely. This forces the user to choose a non-deferral action (e.g. "Restart Now") or let the timeout expire.
 
@@ -228,7 +224,7 @@ Detection is fail-open: if the API call fails or the platform is unsupported, he
 | `--config <json>` | root | JSON config (file path or inline) — routes to service |
 | `--local` | root | Render locally in current session (skip service) |
 | `--port <int>` | serve, notify, list, cancel | gRPC port (default: 4770) |
-| `--db <path>` | serve | Bolt database path (default: platform-specific, see [Architecture](Architecture#persistence)) |
+| `--db <path>` | serve | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
 | `--help` | all | Print help |
 
 ---

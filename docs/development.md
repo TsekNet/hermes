@@ -1,7 +1,5 @@
 # Development
 
-**[← Wiki Home](Home)** · [Usage](Usage) · [Architecture](Architecture) · [Platforms](Platforms)
-
 How to build, test, and iterate on notifications for each platform.
 
 ---
@@ -205,6 +203,8 @@ Use the bundled templates in `testdata/` as starting points:
 | `defer-with-dropdown.json` | VPN disconnect with defer menu |
 | `short-defer-restart.json` | Short deferral (2m deadline, 3 max) for quick lifecycle testing |
 | `short-defer-deadline.json` | Very short deadline (1m) for testing auto-action |
+| `image-carousel.json` | Multi-slide image carousel |
+| `install-with-watch.json` | Filesystem watch for install receipt validation |
 
 Edit a template, run it, tweak, repeat:
 

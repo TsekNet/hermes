@@ -93,7 +93,10 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 
 ## Documentation
 
-**[📚 Wiki](https://github.com/TsekNet/hermes/wiki)** — Usage, Architecture, Development, Platforms. Wiki source lives in `wiki/` in this repo.
+- [Usage](docs/usage.md) -- JSON config, subcommands, flags, exit codes
+- [Architecture](docs/architecture.md) -- service daemon, gRPC, deployment, packages
+- [Development](docs/development.md) -- building, testing, dev workflow
+- [Platforms](docs/platforms.md) -- webview engines, per-OS deployment
 
 ## Contributing
 

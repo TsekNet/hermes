@@ -1,9 +1,5 @@
 # Architecture
 
-**[← Wiki Home](Home)** · [Usage](Usage) · [Development](Development) · [Platforms](Platforms)
-
----
-
 ## Design principle
 
 The notification UI is a web page, not a native dialog. HTML, CSS, and JavaScript are compiled into the Go binary via `embed` and rendered through [Wails v2](https://wails.io) in a platform-native webview (WebView2 on Windows, WKWebView on macOS, WebKitGTK on Linux). This means one UI codebase that looks identical on every OS, styled with standard web tech, with zero external dependencies at runtime.
@@ -234,4 +230,4 @@ Wails event channels:
 
 ## Building
 
-See **[Development](Development)** for build instructions, platform-specific testing, and dev workflow.
+See **[Development](development.md)** for build instructions, platform-specific testing, and dev workflow.
