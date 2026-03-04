@@ -2,6 +2,7 @@ package manager
 
 import (
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -347,8 +348,8 @@ func TestSubmit_DuplicateID(t *testing.T) {
 
 func TestDND_IgnoreShowsImmediately(t *testing.T) {
 	t.Parallel()
-	var shown bool
-	mgr := New(func(n *Notification) { shown = true }, nil)
+	var shown atomic.Bool
+	mgr := New(func(n *Notification) { shown.Store(true) }, nil)
 	mgr.dndChecker = func() bool { return true }
 
 	cfg := testConfig("DND Ignore")
@@ -356,7 +357,7 @@ func TestDND_IgnoreShowsImmediately(t *testing.T) {
 	mgr.Submit(cfg)
 
 	time.Sleep(200 * time.Millisecond)
-	if !shown {
+	if !shown.Load() {
 		t.Error("notification should have been shown immediately with dnd=ignore")
 	}
 }
@@ -372,8 +373,8 @@ func TestDND_RespectDefaultApplied(t *testing.T) {
 
 func TestDND_SkipWhenDNDInactive(t *testing.T) {
 	t.Parallel()
-	var shown bool
-	mgr := New(func(n *Notification) { shown = true }, nil)
+	var shown atomic.Bool
+	mgr := New(func(n *Notification) { shown.Store(true) }, nil)
 	mgr.dndChecker = func() bool { return false }
 
 	cfg := testConfig("DND Skip")
@@ -381,15 +382,15 @@ func TestDND_SkipWhenDNDInactive(t *testing.T) {
 	mgr.Submit(cfg)
 
 	time.Sleep(200 * time.Millisecond)
-	if !shown {
+	if !shown.Load() {
 		t.Error("notification should have been shown when DND is inactive (skip mode)")
 	}
 }
 
 func TestDND_SkipWhenDNDActive(t *testing.T) {
 	t.Parallel()
-	var shown bool
-	mgr := New(func(n *Notification) { shown = true }, nil)
+	var shown atomic.Bool
+	mgr := New(func(n *Notification) { shown.Store(true) }, nil)
 	mgr.dndChecker = func() bool { return true }
 
 	cfg := testConfig("DND Skip Active")
@@ -404,7 +405,7 @@ func TestDND_SkipWhenDNDActive(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for dnd_active result")
 	}
-	if shown {
+	if shown.Load() {
 		t.Error("notification should NOT have been shown when DND is active (skip mode)")
 	}
 }
