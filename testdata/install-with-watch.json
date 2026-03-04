@@ -1,0 +1,15 @@
+{
+  "heading": "Security Agent Installation",
+  "message": "Click Install to begin. The notification will detect when the installation completes.",
+  "title": "IT PLATFORM",
+  "accentColor": "#34C759",
+  "timeout": 600,
+  "timeoutValue": "timeout",
+  "watchPaths": [
+    "/var/db/receipts/com.example.security-agent.plist"
+  ],
+  "buttons": [
+    {"label": "Install", "value": "url:https://intranet.example.com/install-agent", "style": "primary"},
+    {"label": "Dismiss", "value": "dismiss", "style": "secondary"}
+  ]
+}

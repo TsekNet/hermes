@@ -70,6 +70,18 @@ hermes notify '{"heading":"Restart","message":"Please restart.","deferDeadline":
 
 The service tracks deferrals per notification, persisted to disk. When the user defers, the notification reappears after the specified interval — even across service restarts. After `maxDefers` or `deferDeadline`, the notification auto-actions.
 
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| **Buttons & dropdowns** | Primary, secondary, danger styles. Dropdown menus for defer options. |
+| **Deferrals** | User can defer N times within a deadline. State persists across restarts. |
+| **Image carousel** | Embed slides/screenshots via HTTPS URLs or data URIs. Arrow key navigation. |
+| **Filesystem watch** | Monitor paths for changes (e.g. wait for install receipt). UI updates live. |
+| **Do Not Disturb** | Detects OS Focus/DND mode. Default: wait and retry. Also: skip or ignore. |
+| **Settings URIs** | `url:ms-settings:windowsupdate` (Windows), `url:x-apple.systempreferences:...` (macOS). Platform-filtered at runtime. |
+| **Countdown timer** | Auto-action after timeout. Configurable value returned to calling script. |
+
 ## Why web-based
 
 | | Native notifications | hermes |

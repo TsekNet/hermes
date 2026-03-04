@@ -9,10 +9,12 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/TsekNet/hermes/internal/app"
 	"github.com/TsekNet/hermes/internal/client"
 	"github.com/TsekNet/hermes/internal/config"
+	"github.com/TsekNet/hermes/internal/dnd"
 	"github.com/TsekNet/hermes/internal/exitcodes"
 	"github.com/TsekNet/hermes/internal/server"
 	"github.com/google/deck"
@@ -108,6 +110,9 @@ func runRoot(_ *cobra.Command, args []string) error {
 			cfg = demoConfig()
 		}
 		cfg.ApplyDefaults()
+		if err := waitForDND(cfg); err != nil {
+			return err
+		}
 		deck.Infof("local mode: heading=%q buttons=%d", cfg.Heading, len(cfg.Buttons))
 		runUI(cfg)
 		return nil
@@ -142,7 +147,9 @@ func runDemo() error {
 
 	// Service not running — local fallback (also enables Wails binding gen).
 	deck.Info("service not reachable, showing demo locally")
-	runUI(demoConfig())
+	cfg := demoConfig()
+	waitForDND(cfg)
+	runUI(cfg)
 	return nil
 }
 
@@ -199,13 +206,14 @@ func runServiceUI(notifID string, port int) error {
 	err = wails.Run(&options.App{
 		Title:         cfg.Title,
 		Width:         app.WindowWidth,
-		Height:        app.WindowHeight,
+		Height:        app.Height(cfg),
 		Frameless:     true,
 		AlwaysOnTop:   true,
 		DisableResize: true,
 		StartHidden:   true,
 		AssetServer:   &assetserver.Options{Assets: frontendAssets},
 		OnStartup:     a.Startup,
+		OnShutdown:    a.Shutdown,
 		Bind:          []interface{}{a},
 		Windows:       &wopts.Options{IsZoomControlEnabled: false, DisableWindowIcon: true},
 	})
@@ -287,6 +295,29 @@ func loadFromArg(arg string) (*config.NotificationConfig, error) {
 	return nil, fmt.Errorf("not a file or JSON object: %s", arg)
 }
 
+// waitForDND handles DND policy for local mode. Returns nil when it's safe
+// to show the notification, or exits the process for "skip" mode.
+func waitForDND(cfg *config.NotificationConfig) error {
+	switch cfg.ResolvedDND() {
+	case config.DNDIgnore:
+		return nil
+	case config.DNDSkip:
+		if dnd.Active() {
+			deck.Infof("DND active, skipping notification (dnd=skip)")
+			fmt.Print("dnd_active")
+			os.Stdout.Sync()
+			os.Exit(int(exitcodes.OK))
+		}
+		return nil
+	default: // "respect"
+		for dnd.Active() {
+			deck.Infof("DND active, waiting 60s to show notification (dnd=respect)")
+			time.Sleep(60 * time.Second)
+		}
+		return nil
+	}
+}
+
 // runUI opens the Wails webview with the given config. On error it exits
 // with exitError; on success it prints the user's response to stdout.
 func runUI(cfg *config.NotificationConfig) {
@@ -302,13 +333,14 @@ func runUI(cfg *config.NotificationConfig) {
 	err := wails.Run(&options.App{
 		Title:         cfg.Title,
 		Width:         app.WindowWidth,
-		Height:        app.WindowHeight,
+		Height:        app.Height(cfg),
 		Frameless:     true,
 		AlwaysOnTop:   true,
 		DisableResize: true,
 		StartHidden:   true,
 		AssetServer:   &assetserver.Options{Assets: frontendAssets},
 		OnStartup:     a.Startup,
+		OnShutdown:    a.Shutdown,
 		Bind:          []interface{}{a},
 		Windows:       &wopts.Options{IsZoomControlEnabled: false, DisableWindowIcon: true},
 	})

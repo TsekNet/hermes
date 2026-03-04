@@ -16,6 +16,7 @@ The notification UI is a web page, not a native dialog. HTML, CSS, and JavaScrip
 | [Cobra](https://github.com/spf13/cobra) | CLI framework (flags, subcommands, help) |
 | [google/deck](https://github.com/google/deck) | Structured logging (stderr, Windows Event Log, syslog) |
 | [gRPC](https://grpc.io) | Service<->CLI and service<->UI communication |
+| [fsnotify](https://github.com/fsnotify/fsnotify) | Cross-platform filesystem event monitoring |
 
 ---
 
@@ -41,11 +42,12 @@ sequenceDiagram
 ## Notification lifecycle
 
 1. **Submit** — CLI sends config via `Notify` RPC. Manager generates an ID, stores the notification, and blocks the RPC.
-2. **Launch** — Service launches a UI subprocess directly (same user session).
-3. **Response** — User clicks a button. UI reports choice via `ReportChoice` RPC. `Notify` RPC unblocks and returns the value.
-4. **Defer** — User defers. Manager increments defer count, starts an internal timer, and re-launches the UI when the timer fires.
-5. **Deadline** — If `deferDeadline` is set and the deadline passes, the notification auto-actions with `timeoutValue`.
-6. **Cancel** — External `Cancel` RPC removes the notification and unblocks the `Notify` RPC.
+2. **DND check** — Before launching the UI, the manager checks OS Do Not Disturb status. With `dnd=respect` (default), it polls every 60s until DND clears. With `dnd=ignore`, it proceeds immediately. With `dnd=skip`, it completes with `"dnd_active"`.
+3. **Launch** — Service launches a UI subprocess directly (same user session).
+4. **Response** — User clicks a button. UI reports choice via `ReportChoice` RPC. `Notify` RPC unblocks and returns the value.
+5. **Defer** — User defers. Manager increments defer count, starts an internal timer, and re-launches the UI when the timer fires. The DND check runs again before each re-show.
+6. **Deadline** — If `deferDeadline` is set and the deadline passes, the notification auto-actions with `timeoutValue`. Deadlines are enforced even while waiting for DND to clear.
+7. **Cancel** — External `Cancel` RPC removes the notification and unblocks the `Notify` RPC.
 
 ---
 
@@ -99,9 +101,12 @@ hermes/
 │   ├── logging/                   Platform-specific log backends
 │   │   ├── unix.go                syslog (macOS/Linux)
 │   │   └── windows.go             Windows Event Log
-│   ├── manager/                   Notification lifecycle (state, deferrals, deadlines)
+│   ├── dnd/                       Do Not Disturb detection (per-platform)
+│   ├── manager/                   Notification lifecycle (state, deferrals, deadlines, DND)
 │   ├── server/                    gRPC server implementation
-│   └── store/                     bbolt persistence (deferral state survives restarts)
+│   ├── store/                     bbolt persistence (deferral state survives restarts)
+│   ├── urischeme/                 URI allow-list (platform-aware: https, ms-settings, x-apple.systempreferences)
+│   └── watch/                     Filesystem monitoring (fsnotify wrapper)
 │
 ├── frontend/                      The web UI (embedded into binary)
 │   ├── index.html                 Notification layout
@@ -206,8 +211,8 @@ The algorithm uses `WindowCenter()` as a reference point, then derives the notif
 | Platform | Corner | Why |
 |----------|--------|-----|
 | Windows | Bottom-right | Matches Action Center / native toasts |
-| macOS | Top-right | Cocoa y-axis is flipped (large y = top) |
-| Linux | Top-right | GTK uses y-down, so `y` is explicitly set to `margin` |
+| macOS | Top-right | Cocoa y-axis: origin at bottom-left, `y = oy + margin` places window just below menu bar |
+| Linux | Top-right | GTK y-down: `y = oy + margin` from top edge |
 
 ---
 
@@ -216,11 +221,14 @@ The algorithm uses `WindowCenter()` as a reference point, then derives the notif
 The frontend is vanilla HTML/CSS/JS — no framework, no bundler, no node_modules. CSS uses custom properties (`--accent`) set at runtime from `accentColor` in the config.
 
 JS communicates with Go through Wails runtime bindings:
-- `window.go.app.App.GetConfig()` — populate heading, message, buttons, countdown
+- `window.go.app.App.GetConfig()` — populate heading, message, buttons, images, countdown
 - `window.go.app.App.DeferralAllowed()` — check if defer buttons should be shown
 - `window.go.app.App.Ready()` — signal Go to position and show the window
 - `window.go.app.App.Respond(value)` — send the response (button click or timeout)
 - `window.go.app.App.OpenHelp()` — open help URL in system browser
+
+Wails event channels:
+- `fs:event` — filesystem change events from the watch package (fields: `path`, `op`)
 
 ---
 

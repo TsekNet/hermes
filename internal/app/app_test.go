@@ -85,3 +85,39 @@ func TestStartup(t *testing.T) {
 		t.Error("context not set")
 	}
 }
+
+func TestShutdown_NilWatcher(t *testing.T) {
+	t.Parallel()
+	a := New(&config.NotificationConfig{Heading: "H", Message: "M"})
+	a.Shutdown(context.Background())
+}
+
+func TestShutdown_Idempotent(t *testing.T) {
+	t.Parallel()
+	a := New(&config.NotificationConfig{Heading: "H", Message: "M"})
+	a.Shutdown(context.Background())
+	a.Shutdown(context.Background())
+}
+
+func TestHeight(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name   string
+		images []string
+		want   int
+	}{
+		{"no images", nil, WindowHeight},
+		{"empty images", []string{}, WindowHeight},
+		{"with images", []string{"https://example.com/slide.png"}, WindowHeightImages},
+		{"multiple images", []string{"https://a.com/1.png", "https://b.com/2.png"}, WindowHeightImages},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			cfg := &config.NotificationConfig{Heading: "H", Message: "M", Images: tt.images}
+			if got := Height(cfg); got != tt.want {
+				t.Errorf("Height() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}

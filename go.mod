@@ -3,6 +3,7 @@ module github.com/TsekNet/hermes
 go 1.25.0
 
 require (
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/deck v1.1.0
 	github.com/spf13/cobra v1.10.2
 	github.com/wailsapp/wails/v2 v2.11.0

@@ -10,7 +10,9 @@ func demoCmd() *cobra.Command {
 		Use:   "demo",
 		Short: "Show a demo notification",
 		Run: func(_ *cobra.Command, _ []string) {
-			runUI(demoConfig())
+			cfg := demoConfig()
+			waitForDND(cfg)
+			runUI(cfg)
 		},
 	}
 }

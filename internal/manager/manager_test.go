@@ -345,6 +345,105 @@ func TestSubmit_DuplicateID(t *testing.T) {
 	}
 }
 
+func TestDND_IgnoreShowsImmediately(t *testing.T) {
+	t.Parallel()
+	var shown bool
+	mgr := New(func(n *Notification) { shown = true }, nil)
+	mgr.dndChecker = func() bool { return true }
+
+	cfg := testConfig("DND Ignore")
+	cfg.DND = config.DNDIgnore
+	mgr.Submit(cfg)
+
+	time.Sleep(200 * time.Millisecond)
+	if !shown {
+		t.Error("notification should have been shown immediately with dnd=ignore")
+	}
+}
+
+func TestDND_RespectDefaultApplied(t *testing.T) {
+	t.Parallel()
+	cfg := testConfig("DND Default")
+	cfg.ApplyDefaults()
+	if cfg.DND != config.DNDRespect {
+		t.Errorf("dnd = %q, want %q", cfg.DND, config.DNDRespect)
+	}
+}
+
+func TestDND_SkipWhenDNDInactive(t *testing.T) {
+	t.Parallel()
+	var shown bool
+	mgr := New(func(n *Notification) { shown = true }, nil)
+	mgr.dndChecker = func() bool { return false }
+
+	cfg := testConfig("DND Skip")
+	cfg.DND = config.DNDSkip
+	mgr.Submit(cfg)
+
+	time.Sleep(200 * time.Millisecond)
+	if !shown {
+		t.Error("notification should have been shown when DND is inactive (skip mode)")
+	}
+}
+
+func TestDND_SkipWhenDNDActive(t *testing.T) {
+	t.Parallel()
+	var shown bool
+	mgr := New(func(n *Notification) { shown = true }, nil)
+	mgr.dndChecker = func() bool { return true }
+
+	cfg := testConfig("DND Skip Active")
+	cfg.DND = config.DNDSkip
+	_, ch := mgr.Submit(cfg)
+
+	select {
+	case r := <-ch:
+		if r.Value != "dnd_active" {
+			t.Errorf("value = %q, want dnd_active", r.Value)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for dnd_active result")
+	}
+	if shown {
+		t.Error("notification should NOT have been shown when DND is active (skip mode)")
+	}
+}
+
+func TestDND_RespectWaitsForDNDClear(t *testing.T) {
+	t.Parallel()
+	DNDPollInterval = 10 * time.Millisecond
+
+	var calls int
+	var mu sync.Mutex
+	mgr := New(func(n *Notification) {
+		mu.Lock()
+		calls++
+		mu.Unlock()
+	}, nil)
+
+	pollCount := 0
+	mgr.dndChecker = func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		pollCount++
+		return pollCount <= 3
+	}
+
+	cfg := testConfig("DND Respect Wait")
+	cfg.DND = config.DNDRespect
+	mgr.Submit(cfg)
+
+	time.Sleep(200 * time.Millisecond)
+	mu.Lock()
+	defer mu.Unlock()
+	if calls != 1 {
+		t.Errorf("onReshow called %d times, want 1", calls)
+	}
+	if pollCount < 4 {
+		t.Errorf("dndChecker polled %d times, want >= 4", pollCount)
+	}
+}
+
 func TestExitCodes(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

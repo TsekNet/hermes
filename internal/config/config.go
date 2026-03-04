@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,6 +37,38 @@ type NotificationConfig struct {
 	// MaxDefers is the maximum number of times the user may defer.
 	// 0 means unlimited (until deadline).
 	MaxDefers int `json:"maxDefers,omitempty"`
+
+	// Images is an ordered list of image URLs or base64 data URIs to display
+	// in a carousel above the message. When present the window auto-sizes
+	// taller to accommodate the images.
+	Images []string `json:"images,omitempty"`
+
+	// WatchPaths is a list of filesystem paths to monitor for changes.
+	// When a watched path is created, modified, or deleted, the frontend
+	// receives an event via the Wails binding. Useful for validating
+	// installations (e.g. watch for a receipt file to appear).
+	WatchPaths []string `json:"watchPaths,omitempty"`
+
+	// DND controls behavior when the OS Do Not Disturb / Focus mode is active.
+	//   "respect" (default) — wait and retry every 60s until DND is off.
+	//   "ignore"  — show the notification regardless (use for critical alerts).
+	//   "skip"    — silently complete with value "dnd_active" when DND is on.
+	DND string `json:"dnd,omitempty"`
+}
+
+// DND mode constants.
+const (
+	DNDRespect = "respect"
+	DNDIgnore  = "ignore"
+	DNDSkip    = "skip"
+)
+
+// ResolvedDND returns the effective DND mode, defaulting to DNDRespect.
+func (c *NotificationConfig) ResolvedDND() string {
+	if c.DND == "" {
+		return DNDRespect
+	}
+	return c.DND
 }
 
 // Button represents a clickable action in the notification.
@@ -85,6 +118,9 @@ func (c *NotificationConfig) ApplyDefaults() {
 	if c.EscValue == "" && c.TimeoutValue != "" {
 		c.EscValue = c.TimeoutValue
 	}
+	if c.DND == "" {
+		c.DND = DNDRespect
+	}
 	for i := range c.Buttons {
 		if c.Buttons[i].Style == "" {
 			c.Buttons[i].Style = "secondary"
@@ -120,6 +156,34 @@ func (c *NotificationConfig) Validate() error {
 			if strings.ContainsAny(c.Buttons[i].Dropdown[j].Value, "\n\r") {
 				errs = append(errs, "dropdown values must not contain newlines")
 			}
+		}
+	}
+	if c.DND != "" && c.DND != DNDRespect && c.DND != DNDIgnore && c.DND != DNDSkip {
+		errs = append(errs, fmt.Sprintf(`"dnd" must be %q, %q, or %q`, DNDRespect, DNDIgnore, DNDSkip))
+	}
+	if len(c.Images) > 20 {
+		errs = append(errs, fmt.Sprintf("images: %d exceeds maximum of 20", len(c.Images)))
+	}
+	for i, img := range c.Images {
+		lower := strings.ToLower(img)
+		switch {
+		case strings.HasPrefix(lower, "data:image/svg"):
+			errs = append(errs, fmt.Sprintf("images[%d]: SVG data URIs are not allowed", i))
+		case strings.HasPrefix(lower, "data:image/"):
+			// valid raster data URI
+		default:
+			u, err := url.Parse(img)
+			if err != nil || u.Scheme != "https" {
+				errs = append(errs, fmt.Sprintf("images[%d]: must be an https URL or data:image/ URI (http is not allowed)", i))
+			}
+		}
+	}
+	if len(c.WatchPaths) > 10 {
+		errs = append(errs, fmt.Sprintf("watchPaths: %d exceeds maximum of 10", len(c.WatchPaths)))
+	}
+	for i, p := range c.WatchPaths {
+		if strings.Contains(p, "..") {
+			errs = append(errs, fmt.Sprintf("watchPaths[%d]: path traversal (..) is not allowed", i))
 		}
 	}
 	if len(errs) > 0 {

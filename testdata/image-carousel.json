@@ -1,0 +1,27 @@
+{
+  "heading": "macOS 15.3 Update Available",
+  "message": "Review the update details below, then click Update to proceed.",
+  "title": "IT PLATFORM",
+  "accentColor": "#007AFF",
+  "timeout": 300,
+  "timeoutValue": "defer_4h",
+  "deferDeadline": "7d",
+  "maxDefers": 5,
+  "images": [
+    "https://placehold.co/600x400/1a1a2e/007AFF?text=Update+Overview",
+    "https://placehold.co/600x400/1a1a2e/34C759?text=Security+Fixes",
+    "https://placehold.co/600x400/1a1a2e/FF9500?text=Timeline"
+  ],
+  "buttons": [
+    {
+      "label": "Defer",
+      "style": "secondary",
+      "dropdown": [
+        {"label": "1 Hour", "value": "defer_1h"},
+        {"label": "4 Hours", "value": "defer_4h"},
+        {"label": "1 Day", "value": "defer_1d"}
+      ]
+    },
+    {"label": "Update Now", "value": "update", "style": "primary"}
+  ]
+}

@@ -7,11 +7,11 @@
   var responded = false;
   var timer = null;
   var Backend = null;
+  var carouselIndex = 0;
+  var carouselTotal = 0;
 
   var validStyles = { primary: true, secondary: true, danger: true };
 
-  // Discover the App binding regardless of Go package name.
-  // Wails populates window.go.<pkg>.App where <pkg> is the Go package.
   function findApp() {
     if (!window.go) return null;
     for (var ns in window.go) {
@@ -49,6 +49,14 @@
       });
     }
 
+    if (cfg.images && cfg.images.length > 0) {
+      buildCarousel(cfg.images);
+    }
+
+    if (cfg.watchPaths && cfg.watchPaths.length > 0) {
+      initWatchStatus();
+    }
+
     remaining = cfg.timeout || 300;
     timeoutValue = cfg.timeoutValue || "";
     escValue = cfg.escValue || timeoutValue;
@@ -57,6 +65,71 @@
     startCountdown();
 
     if (Backend) Backend.Ready();
+  }
+
+  function buildCarousel(images) {
+    var carousel = document.getElementById("carousel");
+    var track = document.getElementById("carousel-track");
+    var controls = document.getElementById("carousel-controls");
+
+    carousel.style.display = "block";
+    carouselTotal = images.length;
+    carouselIndex = 0;
+
+    for (var i = 0; i < images.length; i++) {
+      var img = document.createElement("img");
+      img.src = images[i];
+      img.alt = "";
+      img.draggable = false;
+      img.onerror = function() {
+        this.style.display = "none";
+        var ph = document.createElement("div");
+        ph.className = "carousel-placeholder";
+        ph.textContent = "Image unavailable";
+        this.parentNode.insertBefore(ph, this.nextSibling);
+      };
+      track.appendChild(img);
+    }
+
+    if (images.length > 1) {
+      controls.style.display = "flex";
+      document.getElementById("carousel-prev").addEventListener("click", carouselPrev);
+      document.getElementById("carousel-next").addEventListener("click", carouselNext);
+      updateCarousel();
+    }
+  }
+
+  function carouselPrev() {
+    carouselIndex = (carouselIndex - 1 + carouselTotal) % carouselTotal;
+    updateCarousel();
+  }
+
+  function carouselNext() {
+    carouselIndex = (carouselIndex + 1) % carouselTotal;
+    updateCarousel();
+  }
+
+  function updateCarousel() {
+    var track = document.getElementById("carousel-track");
+    var imgs = track.querySelectorAll("img");
+    for (var i = 0; i < imgs.length; i++) {
+      imgs[i].style.transform = "translateX(-" + (carouselIndex * 100) + "%)";
+    }
+    document.getElementById("carousel-indicator").textContent =
+      (carouselIndex + 1) + " / " + carouselTotal;
+  }
+
+  function initWatchStatus() {
+    var el = document.getElementById("watch-status");
+    el.style.display = "block";
+    el.textContent = "Monitoring filesystem...";
+
+    if (window.runtime && window.runtime.EventsOn) {
+      window.runtime.EventsOn("fs:event", function(ev) {
+        var basename = ev.path.split("/").pop().split("\\").pop();
+        el.textContent = ev.op + ": " + basename;
+      });
+    }
   }
 
   function buildButtons(buttons) {
@@ -140,6 +213,10 @@
 
   document.addEventListener("keydown", function(e) {
     if (e.keyCode === 27) respond(escValue);
+    if (carouselTotal > 1) {
+      if (e.keyCode === 37) carouselPrev();
+      if (e.keyCode === 39) carouselNext();
+    }
   });
 
   if (document.readyState === "loading") {

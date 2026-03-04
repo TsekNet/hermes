@@ -11,10 +11,15 @@ import (
 	"time"
 
 	"github.com/TsekNet/hermes/internal/config"
+	"github.com/TsekNet/hermes/internal/dnd"
 	"github.com/TsekNet/hermes/internal/exitcodes"
 	"github.com/TsekNet/hermes/internal/store"
 	"github.com/google/deck"
 )
+
+// DNDPollInterval is how often the manager re-checks DND status when
+// waiting for DND to clear. Exported for testing.
+var DNDPollInterval = 60 * time.Second
 
 // State describes where a notification is in its lifecycle.
 type State string
@@ -54,10 +59,11 @@ const MaxActiveNotifications = 50
 
 // Manager holds the set of active notifications.
 type Manager struct {
-	mu       sync.Mutex
-	active   map[string]*Notification
-	store    *store.Store // nil = in-memory only
-	onReshow func(n *Notification)
+	mu         sync.Mutex
+	active     map[string]*Notification
+	store      *store.Store // nil = in-memory only
+	onReshow   func(n *Notification)
+	dndChecker func() bool // returns true when DND is active; defaults to dnd.Active
 }
 
 // New creates a Manager. onReshow is called (in a new goroutine) when a
@@ -65,9 +71,10 @@ type Manager struct {
 // Pass nil for store to disable persistence (tests, local mode).
 func New(onReshow func(n *Notification), s *store.Store) *Manager {
 	return &Manager{
-		active:   make(map[string]*Notification),
-		store:    s,
-		onReshow: onReshow,
+		active:     make(map[string]*Notification),
+		store:      s,
+		onReshow:   onReshow,
+		dndChecker: dnd.Active,
 	}
 }
 
@@ -117,9 +124,7 @@ func (m *Manager) Restore() int {
 		deck.Infof("manager: restored notification %s heading=%q defers=%d", n.ID, n.Config.Heading, n.DeferCount)
 
 		// Kick a reshow immediately — the user was waiting for this.
-		if m.onReshow != nil {
-			go m.onReshow(n)
-		}
+		go m.launchWithDND(n)
 	}
 	return restored
 }
@@ -178,10 +183,8 @@ func (m *Manager) Submit(cfg *config.NotificationConfig) (string, <-chan Result)
 	m.persist(n)
 	deck.Infof("manager: submitted notification %s heading=%q", id, cfg.Heading)
 
-	// Launch the UI immediately.
-	if m.onReshow != nil {
-		go m.onReshow(n)
-	}
+	// Launch the UI (DND-aware).
+	go m.launchWithDND(n)
 
 	return id, n.result
 }
@@ -327,9 +330,7 @@ func (m *Manager) handleDeferLocked(n *Notification, value string) bool {
 			deck.Infof("manager: re-showing notification %s after deferral", n.ID)
 		}
 		m.mu.Unlock()
-		if m.onReshow != nil {
-			m.onReshow(n)
-		}
+		m.launchWithDND(n)
 	})
 
 	return true
@@ -387,6 +388,59 @@ func (m *Manager) persist(n *Notification) {
 	}
 }
 
+
+// launchWithDND checks DND status before launching the UI, respecting the
+// notification's DND policy. Must be called in its own goroutine.
+func (m *Manager) launchWithDND(n *Notification) {
+	if m.onReshow == nil {
+		return
+	}
+
+	switch n.Config.ResolvedDND() {
+	case config.DNDIgnore:
+		m.onReshow(n)
+		return
+
+	case config.DNDSkip:
+		if m.dndChecker() {
+			deck.Infof("manager: DND active, skipping notification %s (dnd=skip)", n.ID)
+			m.mu.Lock()
+			m.completeLocked(n, "dnd_active")
+			m.mu.Unlock()
+			return
+		}
+		m.onReshow(n)
+		return
+
+	default: // "respect"
+		for m.dndChecker() {
+			deck.Infof("manager: DND active, waiting to show %s (dnd=respect)", n.ID)
+
+			m.mu.Lock()
+			if n.State == StateDone {
+				m.mu.Unlock()
+				return
+			}
+			if !n.Deadline.IsZero() && time.Now().After(n.Deadline) {
+				deck.Warningf("manager: deadline passed for %s while waiting for DND, auto-actioning", n.ID)
+				m.completeLocked(n, n.Config.TimeoutValue)
+				m.mu.Unlock()
+				return
+			}
+			m.mu.Unlock()
+
+			time.Sleep(DNDPollInterval)
+		}
+
+		m.mu.Lock()
+		if n.State == StateDone {
+			m.mu.Unlock()
+			return
+		}
+		m.mu.Unlock()
+		m.onReshow(n)
+	}
+}
 
 func generateID() string {
 	b := make([]byte, 8)
