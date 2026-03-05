@@ -27,7 +27,18 @@
 **Linux**
 <img src="assets/screenshot-linux.png" alt="Linux" width="600"/>
 
-</details></br>
+</details>
+
+### Examples
+
+**Notification**
+
+<img src="assets/examples/notification.png" alt="Notification example" width="500"/>
+
+**Notification History (inbox)**
+
+<img src="assets/examples/inbox.png" alt="Inbox with scrollbar" width="500"/>
+
 </div>
 
 > **Disclaimer:** This was created as a fun side project, not affiliated with any company.
