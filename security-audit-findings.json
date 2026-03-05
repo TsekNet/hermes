@@ -1,0 +1,50 @@
+[
+  {
+    "file": "internal/action/action.go:159-164",
+    "category": "command-injection",
+    "priority": "CRITICAL",
+    "summary": "cmd: values passed to shell without sanitization enable arbitrary command execution",
+    "detail": "RunCommandOn passes the full command string to exec.Command(\"sh\", \"-c\", cmdStr) or exec.Command(\"cmd\", \"/C\", cmdStr). Config-controlled values from ResultActions and Button values are passed through. Validate() only checks that values start with cmd: and does not restrict shell metacharacters (;, |, $(), newlines, backticks). An attacker who supplies a config (--config file, stdin, or gRPC Notify) can execute arbitrary commands as the logged-in user.",
+    "suggestion": "Validate cmd: values: reject newlines, and consider an allowlist of safe commands or exec with explicit argv (exec.Command(binary, args...) instead of shell). Document that only trusted configs should define cmd: actions."
+  },
+  {
+    "file": "internal/config/config.go:412-420",
+    "category": "injection-vector",
+    "priority": "HIGH",
+    "summary": "ResultActions values not validated for newlines; enables multi-command injection",
+    "detail": "Validate() checks result_actions keys for newlines but not values. A value like \"cmd:shutdown /r /t 60\\nrm -rf /\" passes validation. The newline is passed to sh -c and interpreted as a command separator, executing both commands.",
+    "suggestion": "Add validation: if strings.HasPrefix(lower, \"cmd:\") && strings.ContainsAny(v, \"\\n\\r\") { errs = append(errs, ...) }"
+  },
+  {
+    "file": "cmd/root.go:311-326",
+    "category": "path-traversal",
+    "priority": "MEDIUM",
+    "summary": "loadFromArg accepts arbitrary paths; no restriction enables reading any file",
+    "detail": "The --config flag and positional args are passed directly to os.Stat() and os.ReadFile() with no path sanitization or directory restriction. An attacker can pass ../../../etc/passwd or /home/user/.ssh/id_rsa to read arbitrary files. Content is parsed as YAML; invalid content yields parse errors, but the file is still read into memory.",
+    "suggestion": "Restrict to a config directory, use filepath.Clean and filepath.EvalSymlinks, or require paths to be under a known base (e.g. current dir or XDG_CONFIG_HOME)."
+  },
+  {
+    "file": "internal/config/config.go:417-419",
+    "category": "insecure-default",
+    "priority": "MEDIUM",
+    "summary": "ResultActions allows http: URLs; enables open redirect and phishing",
+    "detail": "Validate() permits result_actions values starting with http: (in addition to https:). When the user clicks a button or timeout triggers an action, url:http://evil.com opens in the browser. Images already restrict to https only; result_actions does not.",
+    "suggestion": "Restrict result_actions url: values to https: only, consistent with Images validation."
+  },
+  {
+    "file": "internal/config/config.go:27",
+    "category": "missing-validation",
+    "priority": "LOW",
+    "summary": "HelpURL has no server-side validation",
+    "detail": "HelpURL is not validated in Validate(). The frontend uses /^https?:\\/\\//i and openURL uses action.Allowed (url.Parse), which blocks javascript: and file:. But HelpURL could be http://phishing-site.com. Defense in depth is lacking.",
+    "suggestion": "Add HelpURL validation in Validate(): require https: or empty; optionally validate URL format and block file:, javascript:, data:."
+  },
+  {
+    "file": "internal/config/config.go:383-386",
+    "category": "path-traversal",
+    "priority": "LOW",
+    "summary": "WatchPaths blocks .. but allows symlinks and absolute paths to sensitive locations",
+    "detail": "Validate() rejects paths containing \"..\" but does not resolve symlinks or restrict absolute paths. A path like /var/log (if symlinked) or /etc could expose sensitive file events. watch_paths are passed to fsnotify.",
+    "suggestion": "Consider filepath.EvalSymlinks and rejecting paths outside allowed roots (e.g. /tmp, user home, or an explicit allowlist)."
+  }
+]

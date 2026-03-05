@@ -55,9 +55,9 @@ echo '{"heading":"..."}' | hermes --local
 
 ---
 
-## JSON config
+## Config format
 
-hermes accepts a single JSON object with these fields:
+hermes accepts a single JSON or YAML config with these fields:
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
@@ -369,7 +369,7 @@ The second notification is held in `waiting_on_dependency` state until the first
 
 | Flag | Scope | Description |
 |------|-------|-------------|
-| `--config <json>` | root | JSON config (file path or inline) — routes to service |
+| `--config <path or json>` | root | config file or inline JSON/YAML — routes to service |
 | `--local` | root | Render locally in current session (skip service) |
 | `--locale <code>` | root | Override locale for localized notifications (e.g. `ja`, `de`) |
 | `--port <int>` | serve, notify, list, cancel | gRPC port (default: 4770) |
@@ -395,13 +395,20 @@ The second notification is held in `waiting_on_dependency` state until the first
 
 ## Input methods
 
-hermes auto-detects how you're providing the config:
+hermes auto-detects how you're providing the config (JSON and YAML files are both supported):
 
 ### File path
 
 ```bash
 hermes notify restart-notification.json
 hermes --config restart-notification.json
+```
+
+### YAML file
+
+```bash
+hermes notify restart-notification.yml
+hermes --config restart-notification.yaml
 ```
 
 ### Inline JSON
@@ -443,7 +450,7 @@ $config | & hermes.exe notify
 
 ## Example templates
 
-See `testdata/` for ready-to-use JSON configs:
+See `testdata/` for ready-to-use configs (JSON and YAML):
 
 - `restart-notification.json` — Restart with defer dropdown
 - `update-notification.json` — Software update with defer

@@ -76,7 +76,7 @@ Use '--config' or '--local' to render directly without the service.`,
 
 	f := root.Flags()
 	f.BoolVar(&flagLocal, "local", false, "render locally in current session (skip service)")
-	f.StringVar(&flagConfig, "config", "", "JSON config (file path or inline JSON)")
+	f.StringVar(&flagConfig, "config", "", "config file or inline JSON/YAML")
 	f.StringVar(&flagLocale, "locale", "", "override locale for localized notifications (e.g. ja, de, es)")
 
 	// Hidden flags — set by the service when launching UI subprocesses.
@@ -307,7 +307,7 @@ func resolveConfig(configFlag string, args []string) (*config.NotificationConfig
 	return nil, nil
 }
 
-// loadFromArg tries the arg as a file path first, then as inline JSON.
+// loadFromArg tries the arg as a file path first, then as inline JSON/YAML.
 func loadFromArg(arg string) (*config.NotificationConfig, error) {
 	if _, err := os.Stat(arg); err == nil {
 		data, err := os.ReadFile(arg)
@@ -323,7 +323,7 @@ func loadFromArg(arg string) (*config.NotificationConfig, error) {
 		return config.LoadJSON([]byte(trimmed))
 	}
 
-	return nil, fmt.Errorf("not a file or JSON object: %s", arg)
+	return nil, fmt.Errorf("not a file or valid config: %s", arg)
 }
 
 // waitForDND handles DND policy for local mode. Returns nil when it's safe

@@ -1,0 +1,58 @@
+[
+  {
+    "file": "internal/config/config.go:214-228",
+    "category": "deserialization-dos",
+    "priority": "HIGH",
+    "summary": "64KB size limit does not protect against YAML bomb / alias expansion",
+    "detail": "MaxConfigSize (64KB) is enforced before yaml.Unmarshal. YAML bombs use small input (e.g. 1KB) that expands to gigabytes during parsing via anchors/aliases. A malicious config under 64KB can cause OOM or excessive CPU during Unmarshal. gopkg.in/yaml.v3 supports anchors and aliases; CVE-2021-4235 (unbounded alias chasing) affected go-yaml—verify v3.0.1 includes the fix.",
+    "suggestion": "Use yaml.Decoder with SetLimit or a custom decoder that caps node depth/alias count. Alternatively, reject YAML with anchors (e.g. scan for '&' and '*' before parse). Document that configs must come from trusted sources."
+  },
+  {
+    "file": "internal/config/config.go:214-228",
+    "category": "dependency-vulnerability",
+    "priority": "MEDIUM",
+    "summary": "gopkg.in/yaml.v3 v3.0.1: verify CVE-2021-4235 and CVE-2022-3064 applicability",
+    "detail": "CVE-2021-4235 (unbounded alias chasing, CVSS 5.5) and CVE-2022-3064 (excessive CPU/memory) affect go-yaml. v3.0.1 fixes CVE-2022-28948 (panic). The v3 line shares code with v2; confirm v3.0.1 includes alias-chasing limits. Configs from untrusted sources (stdin, --config, gRPC) are parsed without additional constraints.",
+    "suggestion": "Run go list -m -json gopkg.in/yaml.v3 and check for known vulnerabilities. Consider yaml.v3 fork with stricter limits if parsing untrusted input."
+  },
+  {
+    "file": "cmd/root.go:311-326",
+    "category": "path-traversal",
+    "priority": "MEDIUM",
+    "summary": "loadFromArg accepts arbitrary paths; no restriction enables reading any file",
+    "detail": "The --config flag and positional args are passed directly to os.Stat() and os.ReadFile() with no path sanitization or directory restriction. An attacker can pass ../../../etc/passwd or /home/user/.ssh/id_rsa to read arbitrary files. Content is parsed as YAML; invalid content yields parse errors, but the file is still read into memory.",
+    "suggestion": "Restrict to a config directory, use filepath.Clean and filepath.EvalSymlinks, or require paths to be under a known base (e.g. current dir or XDG_CONFIG_HOME)."
+  },
+  {
+    "file": "internal/action/action.go:157-166",
+    "category": "command-injection",
+    "priority": "CRITICAL",
+    "summary": "cmd: values passed to shell without sanitization enable arbitrary command execution",
+    "detail": "RunCommandOn passes the full command string to exec.Command(\"sh\", \"-c\", cmdStr) or exec.Command(\"cmd\", \"/C\", cmdStr). Config-controlled values from ResultActions and Button values are passed through. Validate() only checks that values start with cmd: and does not restrict shell metacharacters (;, |, $(), newlines, backticks). An attacker who supplies a config (--config file, stdin, or gRPC Notify) can execute arbitrary commands as the logged-in user.",
+    "suggestion": "Validate cmd: values: reject newlines, and consider an allowlist of safe commands or exec with explicit argv (exec.Command(binary, args...) instead of shell). Document that only trusted configs should define cmd: actions."
+  },
+  {
+    "file": "internal/config/config.go:412-420",
+    "category": "injection-vector",
+    "priority": "HIGH",
+    "summary": "ResultActions values not validated for newlines; enables multi-command injection",
+    "detail": "Validate() checks result_actions keys for newlines but not values. A value like \"cmd:shutdown /r /t 60\\nrm -rf /\" passes validation. The newline is passed to sh -c and interpreted as a command separator, executing both commands.",
+    "suggestion": "Add validation: if strings.HasPrefix(lower, \"cmd:\") && strings.ContainsAny(v, \"\\n\\r\") { errs = append(errs, ...) }"
+  },
+  {
+    "file": "cmd/root.go:321-324",
+    "category": "missing-validation",
+    "priority": "LOW",
+    "summary": "loadFromArg only accepts inline config starting with '{'; block-style YAML rejected",
+    "detail": "loadFromArg checks strings.HasPrefix(trimmed, \"{\") before treating arg as inline. Valid YAML like 'heading: Test\\nmessage: Hi' is rejected with \"not a file or JSON object\". Config can still come from file or stdin. Error message says \"JSON object\" despite YAML support. Inconsistent UX; if block-style YAML is added, ensure same security checks apply.",
+    "suggestion": "Accept inline YAML that doesn't start with '{' (e.g. try config.Load on trimmed bytes when file doesn't exist). Update error message. Apply same size/validation to all config sources."
+  },
+  {
+    "file": "internal/config/config.go:417-419",
+    "category": "insecure-default",
+    "priority": "MEDIUM",
+    "summary": "ResultActions allows http: URLs; enables open redirect and phishing",
+    "detail": "Validate() permits result_actions values starting with http: (in addition to https:). When the user clicks a button or timeout triggers an action, url:http://evil.com opens in the browser. Images already restrict to https only; result_actions does not.",
+    "suggestion": "Restrict result_actions url: values to https: only, consistent with Images validation."
+  }
+]

@@ -16,10 +16,10 @@ func notifyCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "notify [config]",
 		Short: "Send a notification via the hermes service",
-		Long: `Sends a JSON notification config to the running hermes service and blocks
+		Long: `Sends a notification config to the running hermes service and blocks
 until the user responds or the notification times out.
 
-Config can be a file path, inline JSON string, or piped via stdin.`,
+Config can be a file path (JSON or YAML), inline JSON string, or piped via stdin.`,
 		Example: `  hermes notify '{"heading":"Restart","message":"Please restart."}'
   hermes notify notification.json
   echo '{"heading":"..."}' | hermes notify

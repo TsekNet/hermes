@@ -15,7 +15,7 @@
 
 ---
 
-*hermes* [^1] renders system notifications inside a pretty [Wails v2](https://wails.io) webview instead of platform-specific toasts. Defines configs in JSON and produces consistent-looking notifications across Linux, macOS, and Windows.
+*hermes* [^1] renders system notifications inside a pretty [Wails v2](https://wails.io) webview instead of platform-specific toasts. Defines configs in JSON or YAML and produces consistent-looking notifications across Linux, macOS, and Windows.
 
 [^1]: Named after *Hermes*, the Greek messenger god.
 
@@ -101,7 +101,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 ## Documentation
 
 - [Examples](assets/examples/) -- screenshots of every notification type
-- [Usage](docs/usage.md) -- JSON config, subcommands, flags, exit codes
+- [Usage](docs/usage.md) -- JSON/YAML config, subcommands, flags, exit codes
 - [Architecture](docs/architecture.md) -- service daemon, gRPC, deployment, packages
 - [Development](docs/development.md) -- building, testing, dev workflow
 - [Platforms](docs/platforms.md) -- webview engines, per-OS deployment

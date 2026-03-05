@@ -94,8 +94,8 @@ func TestLoadJSON(t *testing.T) {
 		},
 		{name: "empty input", input: "", wantErr: true, errSubstr: "empty config"},
 		{name: "whitespace only", input: "   ", wantErr: true, errSubstr: "empty config"},
-		{name: "invalid JSON", input: "{not valid}", wantErr: true, errSubstr: "parse config JSON"},
-		{name: "array instead of object", input: `[{"heading":"H"}]`, wantErr: true, errSubstr: "parse config JSON"},
+		{name: "invalid syntax", input: "heading: [\ninvalid", wantErr: true, errSubstr: "parse config"},
+		{name: "array instead of object", input: `[{"heading":"H"}]`, wantErr: true, errSubstr: "parse config"},
 	}
 
 	for _, tt := range tests {
@@ -895,6 +895,192 @@ func TestValidate_HTMLEscaping(t *testing.T) {
 	}
 	if strings.Contains(cfg.Buttons[0].Dropdown[0].Label, "<em>") {
 		t.Error("dropdown label not escaped")
+	}
+}
+
+func TestLoad_YAML(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		input     string
+		wantErr   bool
+		errSubstr string
+		checkFn   func(t *testing.T, cfg *NotificationConfig)
+	}{
+		{
+			name: "full YAML config",
+			input: `
+heading: Reboot Required
+message: Your device requires a reboot to apply security updates.
+title: IT Security
+accent_color: "#E53E3E"
+buttons:
+  - label: Reboot Now
+    value: reboot
+    style: primary
+  - label: Remind Me Later
+    value: defer_4h
+    style: secondary
+timeout: 300
+timeout_value: timeout
+max_defers: 3
+defer_deadline: 24h
+`,
+			checkFn: func(t *testing.T, cfg *NotificationConfig) {
+				t.Helper()
+				if cfg.Heading != "Reboot Required" {
+					t.Errorf("heading = %q", cfg.Heading)
+				}
+				if cfg.Message != "Your device requires a reboot to apply security updates." {
+					t.Errorf("message = %q", cfg.Message)
+				}
+				if cfg.Title != "IT Security" {
+					t.Errorf("title = %q", cfg.Title)
+				}
+				if cfg.AccentColor != "#E53E3E" {
+					t.Errorf("accent_color = %q", cfg.AccentColor)
+				}
+				if len(cfg.Buttons) != 2 {
+					t.Fatalf("buttons len = %d", len(cfg.Buttons))
+				}
+				if cfg.Buttons[0].Label != "Reboot Now" || cfg.Buttons[0].Value != "reboot" {
+					t.Errorf("button[0] = %+v", cfg.Buttons[0])
+				}
+				if cfg.Buttons[1].Style != "secondary" {
+					t.Errorf("button[1].style = %q", cfg.Buttons[1].Style)
+				}
+				if cfg.TimeoutSeconds != 300 {
+					t.Errorf("timeout = %d", cfg.TimeoutSeconds)
+				}
+				if cfg.MaxDefers != 3 {
+					t.Errorf("max_defers = %d", cfg.MaxDefers)
+				}
+				if cfg.DeferDeadline != "24h" {
+					t.Errorf("defer_deadline = %q", cfg.DeferDeadline)
+				}
+			},
+		},
+		{
+			name: "minimal YAML",
+			input: `
+heading: Test
+message: Hello
+`,
+			checkFn: func(t *testing.T, cfg *NotificationConfig) {
+				t.Helper()
+				if cfg.Heading != "Test" {
+					t.Errorf("heading = %q", cfg.Heading)
+				}
+				if cfg.Message != "Hello" {
+					t.Errorf("message = %q", cfg.Message)
+				}
+			},
+		},
+		{
+			name: "YAML with dropdown",
+			input: `
+heading: Update
+message: A new update is available.
+buttons:
+  - label: Defer
+    style: secondary
+    dropdown:
+      - label: 1 Hour
+        value: defer_1h
+      - label: 4 Hours
+        value: defer_4h
+`,
+			checkFn: func(t *testing.T, cfg *NotificationConfig) {
+				t.Helper()
+				if len(cfg.Buttons) != 1 {
+					t.Fatalf("buttons len = %d", len(cfg.Buttons))
+				}
+				if len(cfg.Buttons[0].Dropdown) != 2 {
+					t.Fatalf("dropdown len = %d", len(cfg.Buttons[0].Dropdown))
+				}
+				if cfg.Buttons[0].Dropdown[1].Value != "defer_4h" {
+					t.Errorf("dropdown[1].value = %q", cfg.Buttons[0].Dropdown[1].Value)
+				}
+			},
+		},
+		{
+			name: "YAML with escalation",
+			input: `
+heading: Restart
+message: Please restart.
+escalation:
+  - after_defers: 2
+    timeout: 120
+    accent_color: "#FF6600"
+  - after_defers: 4
+    timeout: 60
+    accent_color: "#FF0000"
+    message_suffix: " FINAL WARNING"
+`,
+			checkFn: func(t *testing.T, cfg *NotificationConfig) {
+				t.Helper()
+				if len(cfg.Escalation) != 2 {
+					t.Fatalf("escalation len = %d", len(cfg.Escalation))
+				}
+				if cfg.Escalation[0].AfterDefers != 2 || cfg.Escalation[0].Timeout != 120 {
+					t.Errorf("escalation[0] = %+v", cfg.Escalation[0])
+				}
+				if cfg.Escalation[1].MessageSuffix != " FINAL WARNING" {
+					t.Errorf("escalation[1].message_suffix = %q", cfg.Escalation[1].MessageSuffix)
+				}
+			},
+		},
+		{
+			name: "YAML with quiet hours",
+			input: `
+heading: H
+message: M
+quiet_hours:
+  start: "22:00"
+  end: "07:00"
+  timezone: America/Los_Angeles
+`,
+			checkFn: func(t *testing.T, cfg *NotificationConfig) {
+				t.Helper()
+				if cfg.QuietHours == nil {
+					t.Fatal("quiet_hours is nil")
+				}
+				if cfg.QuietHours.Start != "22:00" {
+					t.Errorf("start = %q", cfg.QuietHours.Start)
+				}
+				if cfg.QuietHours.Timezone != "America/Los_Angeles" {
+					t.Errorf("timezone = %q", cfg.QuietHours.Timezone)
+				}
+			},
+		},
+		{
+			name: "JSON still works through Load",
+			input: `{"heading":"H","message":"M","timeout":60}`,
+			checkFn: func(t *testing.T, cfg *NotificationConfig) {
+				t.Helper()
+				if cfg.Heading != "H" {
+					t.Errorf("heading = %q", cfg.Heading)
+				}
+				if cfg.TimeoutSeconds != 60 {
+					t.Errorf("timeout = %d", cfg.TimeoutSeconds)
+				}
+			},
+		},
+		{name: "invalid YAML", input: "heading: [\ninvalid", wantErr: true, errSubstr: "parse config"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			cfg, err := Load([]byte(tt.input))
+			if assertError(t, err, tt.wantErr, tt.errSubstr) {
+				return
+			}
+			if tt.checkFn != nil {
+				tt.checkFn(t, cfg)
+			}
+		})
 	}
 }
 
