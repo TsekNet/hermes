@@ -3,8 +3,8 @@
   "message": "Your VPN connection was dropped. Reconnect to access corporate resources.",
   "timeout": 60,
   "timeoutValue": "dismiss",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "priority": 7,
   "dnd": "ignore",
   "buttons": [

@@ -3,8 +3,8 @@
   "message": "A new version of the security agent is available. Click Update to install.",
   "timeout": 300,
   "timeoutValue": "defer_4h",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "priority": 5,
   "quietHours": {
     "start": "22:00",

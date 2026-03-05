@@ -3,7 +3,7 @@
   "message": "A zero-day vulnerability has been patched. Immediate restart is required to protect your system.",
   "timeout": 120,
   "timeoutValue": "restart",
-  "title": "NVIDIA IT - CRITICAL",
+  "title": "IT Department - CRITICAL",
   "accentColor": "#FF0000",
   "priority": 10,
   "dnd": "ignore",

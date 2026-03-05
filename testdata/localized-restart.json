@@ -19,8 +19,8 @@
   },
   "timeout": 120,
   "timeoutValue": "defer_1h",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "buttons": [
     { "label": "Restart Now", "value": "restart", "style": "primary" },
     { "label": "Defer 1h", "value": "defer_1h", "style": "secondary" }

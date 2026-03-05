@@ -4,8 +4,8 @@
   "id": "accept-eula",
   "timeout": 600,
   "timeoutValue": "defer_1h",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "priority": 9,
   "buttons": [
     { "label": "Accept", "value": "accepted", "style": "primary" },

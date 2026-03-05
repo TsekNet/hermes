@@ -5,8 +5,8 @@
   "dependsOn": "accept-eula",
   "timeout": 300,
   "timeoutValue": "restart",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "priority": 9,
   "buttons": [
     { "label": "Install & Restart", "value": "restart", "style": "primary" },

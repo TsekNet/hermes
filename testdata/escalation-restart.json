@@ -7,8 +7,8 @@
   "deferDeadline": "10m",
   "maxDefers": 5,
   "priority": 8,
-  "accentColor": "#76B900",
-  "title": "NVIDIA IT",
+  "accentColor": "#D4A843",
+  "title": "IT Department",
   "helpUrl": "https://github.com/TsekNet/hermes",
   "buttons": [
     {
