@@ -226,6 +226,7 @@ func runServiceUI(notifID string, port int) error {
 		return fmt.Errorf("get ui config: %w", err)
 	}
 	cfg.ApplyDefaults()
+	cfg.ApplyLocale(config.DetectLocale())
 
 	// If deferrals are exhausted or deadline passed, filter out defer buttons.
 	if !deferAllowed {

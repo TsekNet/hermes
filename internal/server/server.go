@@ -65,6 +65,7 @@ func (s *Server) Notify(ctx context.Context, req *pb.NotifyRequest) (*pb.NotifyR
 		return &pb.NotifyResponse{ExitCode: 1, Error: err.Error()}, nil
 	}
 	cfg.ApplyDefaults()
+	cfg.ApplyLocale(config.DetectLocale())
 	if err := cfg.Validate(); err != nil {
 		return &pb.NotifyResponse{ExitCode: 1, Error: err.Error()}, nil
 	}
