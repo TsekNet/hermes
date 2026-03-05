@@ -59,7 +59,7 @@ jobs:
           fi
           eval wails build $BUILD_FLAGS
 
-      - name: Package for Fleet TUF
+      - name: Package release artifacts
         shell: bash
         run: |
           mkdir -p dist
