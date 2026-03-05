@@ -6,6 +6,11 @@
   [![codecov](https://codecov.io/gh/TsekNet/hermes/branch/main/graph/badge.svg)](https://codecov.io/gh/TsekNet/hermes)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![GitHub Release](https://img.shields.io/github/v/release/TsekNet/hermes)](https://github.com/TsekNet/hermes/releases)
+
+<br>
+
+<img src="assets/hero.png" alt="hermes notification" width="500"/>
+
 </div>
 
 ---
@@ -13,40 +18,6 @@
 *hermes* [^1] renders system notifications inside a pretty [Wails v2](https://wails.io) webview instead of platform-specific toasts. Defines configs in JSON and produces consistent-looking notifications across Linux, macOS, and Windows.
 
 [^1]: Named after *Hermes*, the Greek messenger god.
-
-<div align="center">
-<img src="assets/screenshot-windows.png" alt="Windows" width="600"/>
-
-<details>
-<summary><strong>macOS &amp; Linux screenshots</strong></summary>
-<br>
-
-**macOS**
-<img src="assets/screenshot-macos.png" alt="macOS" width="600"/>
-
-**Linux**
-<img src="assets/screenshot-linux.png" alt="Linux" width="600"/>
-
-</details>
-
-### Examples
-
-| | |
-|---|---|
-| **Simple** | **Restart** |
-| <img src="assets/examples/simple-notification.png" alt="Simple notification" width="380"/> | <img src="assets/examples/restart-notification.png" alt="Restart notification" width="380"/> |
-| **Update** | **Defer with dropdown** |
-| <img src="assets/examples/update-notification.png" alt="Update notification" width="380"/> | <img src="assets/examples/defer-with-dropdown.png" alt="Defer with dropdown" width="380"/> |
-| **Short defer (restart)** | **Short defer (deadline)** |
-| <img src="assets/examples/short-defer-restart.png" alt="Short defer restart" width="380"/> | <img src="assets/examples/short-defer-deadline.png" alt="Short defer deadline" width="380"/> |
-| **Image carousel** | **Install with watch** |
-| <img src="assets/examples/image-carousel.png" alt="Image carousel" width="380"/> | <img src="assets/examples/install-with-watch.png" alt="Install with watch" width="380"/> |
-
-**Notification History (inbox)**
-
-<img src="assets/examples/inbox.png" alt="Notification history with scrollbar" width="460"/>
-
-</div>
 
 > **Disclaimer:** This was created as a fun side project, not affiliated with any company.
 
@@ -116,6 +87,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 
 ## Documentation
 
+- [Examples](assets/examples/) -- screenshots of every notification type
 - [Usage](docs/usage.md) -- JSON config, subcommands, flags, exit codes
 - [Architecture](docs/architecture.md) -- service daemon, gRPC, deployment, packages
 - [Development](docs/development.md) -- building, testing, dev workflow
