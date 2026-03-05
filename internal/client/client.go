@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TsekNet/hermes/internal/auth"
 	"github.com/TsekNet/hermes/internal/config"
 	"github.com/TsekNet/hermes/internal/server"
 	pb "github.com/TsekNet/hermes/proto"
@@ -22,9 +23,14 @@ type Client struct {
 }
 
 // Dial connects to the hermes gRPC service on localhost.
+// It auto-loads the session token from disk for authentication.
 func Dial(port int) (*Client, error) {
 	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	if token, err := auth.LoadToken(); err == nil && token != "" {
+		opts = append(opts, grpc.WithPerRPCCredentials(&auth.PerRPCCredentials{Token: token}))
+	}
+	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("grpc dial %s: %w", addr, err)
 	}
@@ -135,6 +141,38 @@ func (c *Client) List(ctx context.Context) ([]ListEntry, error) {
 			entry.Deadline = time.Unix(ni.DeadlineUnix, 0)
 		}
 		out = append(out, entry)
+	}
+	return out, nil
+}
+
+// HistoryEntry is a completed notification from the ListHistory RPC.
+type HistoryEntry struct {
+	ID            string
+	Heading       string
+	Message       string
+	Source        string
+	ResponseValue string
+	CreatedAt     time.Time
+	CompletedAt   time.Time
+}
+
+// ListHistory returns completed notification history from the service.
+func (c *Client) ListHistory(ctx context.Context) ([]HistoryEntry, error) {
+	resp, err := c.svc.ListHistory(ctx, &pb.ListHistoryRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("list history rpc: %w", err)
+	}
+	out := make([]HistoryEntry, len(resp.Records))
+	for i, r := range resp.Records {
+		out[i] = HistoryEntry{
+			ID:            r.Id,
+			Heading:       r.Heading,
+			Message:       r.Message,
+			Source:        r.Source,
+			ResponseValue: r.ResponseValue,
+			CreatedAt:     time.Unix(r.CreatedUnix, 0),
+			CompletedAt:   time.Unix(r.CompletedUnix, 0),
+		}
 	}
 	return out, nil
 }

@@ -1,8 +1,8 @@
 {
   "heading": "Maintenance Window",
   "message": "Scheduled maintenance begins in 30 minutes. Please save your work.",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "timeout": 60,
   "timeoutValue": "dismiss",
   "buttons": [

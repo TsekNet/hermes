@@ -1,5 +1,5 @@
 :root {
-  --accent: #76B900;
+  --accent: #D4A843;
   --bg: #1a1a2e;
   --surface: #16213e;
   --text: #e0e0e0;
@@ -226,4 +226,101 @@ html, body {
   color: var(--accent);
   border-top: 1px solid var(--border);
   margin-top: 4px;
+}
+
+/* --- Inbox --- */
+
+.inbox-body {
+  overflow: hidden;
+}
+
+.inbox-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 3px);
+  padding: 12px 14px 8px;
+}
+
+.inbox-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  --wails-draggable: drag;
+}
+
+.inbox-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.inbox-list::-webkit-scrollbar { width: 8px; }
+.inbox-list::-webkit-scrollbar-track { background: var(--bg); border-radius: 4px; }
+.inbox-list::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+.inbox-list::-webkit-scrollbar-thumb:hover { background: var(--text); }
+
+.inbox-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.inbox-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.inbox-card-heading {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.inbox-card-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-ok { background: rgba(212,168,67,0.2); color: var(--accent); }
+.badge-muted { background: rgba(160,160,160,0.15); color: var(--text-muted); }
+.badge-warn { background: rgba(241,196,15,0.2); color: #f1c40f; }
+
+.inbox-card-message {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+
+.inbox-card-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.badge-action {
+  cursor: pointer;
+  transition: opacity 0.15s;
+  border: none;
+}
+
+.badge-action:hover { opacity: 0.75; }
+.badge-action:disabled { opacity: 0.5; cursor: default; }
+
+.inbox-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 12px;
 }

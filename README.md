@@ -51,6 +51,10 @@ hermes --config notification.json
 # List active notifications
 hermes list
 
+# View notification history (inbox)
+hermes inbox
+hermes inbox --json
+
 # Show a demo notification (no service needed)
 hermes demo
 ```
@@ -81,6 +85,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Do Not Disturb** | Detects OS Focus/DND mode. Default: wait and retry. Also: skip or ignore. |
 | **Settings URIs** | `url:ms-settings:windowsupdate` (Windows), `url:x-apple.systempreferences:...` (macOS). Platform-filtered at runtime. |
 | **Countdown timer** | Auto-action after timeout. Configurable value returned to calling script. |
+| **Inbox / history** | Completed notifications are persisted. View past actions via `hermes inbox` (UI or JSON). Auto-pruned by age and count. |
 
 ## Why web-based
 

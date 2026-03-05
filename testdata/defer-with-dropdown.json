@@ -1,12 +1,12 @@
 {
   "heading": "VPN Disconnecting",
   "message": "Your VPN session will be disconnected for network maintenance. Reconnect after the maintenance window.",
-  "title": "NVIDIA NETWORK",
-  "accentColor": "#76B900",
+  "title": "Network Ops",
+  "accentColor": "#D4A843",
   "timeout": 120,
   "timeoutValue": "disconnect",
   "escValue": "defer_1h",
-  "helpUrl": "https://help.nvidia.com/vpn-maintenance",
+  "helpUrl": "https://example.com/help/vpn-maintenance",
   "buttons": [
     {
       "label": "Defer",

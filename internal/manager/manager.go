@@ -276,6 +276,19 @@ func (m *Manager) List() []NotificationInfo {
 	return out
 }
 
+// ListHistory returns completed notification records from the store.
+func (m *Manager) ListHistory() []*store.HistoryRecord {
+	if m.store == nil {
+		return nil
+	}
+	records, err := m.store.LoadHistory()
+	if err != nil {
+		deck.Errorf("manager: list history: %v", err)
+		return nil
+	}
+	return records
+}
+
 // NotificationInfo is a read-only snapshot for the List RPC.
 type NotificationInfo struct {
 	ID         string
@@ -350,8 +363,16 @@ func (m *Manager) completeLocked(n *Notification, value string) bool {
 	}
 	close(n.result)
 
-	// Remove from store immediately.
 	if m.store != nil {
+		if err := m.store.SaveHistory(&store.HistoryRecord{
+			ID:            n.ID,
+			Config:        n.Config,
+			ResponseValue: value,
+			CreatedAt:     n.CreatedAt,
+			CompletedAt:   time.Now(),
+		}); err != nil {
+			deck.Errorf("manager: save history %s: %v", n.ID, err)
+		}
 		m.store.Delete(n.ID)
 	}
 

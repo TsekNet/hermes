@@ -19,7 +19,27 @@ hermes list
 
 # Cancel a notification
 hermes cancel <notification-id>
+
+# View notification history
+hermes inbox
+
+# Print history as JSON
+hermes inbox --json
 ```
+
+---
+
+## Inbox (notification history)
+
+Completed notifications are automatically saved to the history bucket. The inbox lets you review past notifications and their outcomes.
+
+```bash
+hermes inbox              # Opens the inbox UI
+hermes inbox --json       # Prints history as JSON to stdout
+hermes inbox --db my.db   # Read directly from a bolt DB file (skip service)
+```
+
+The inbox connects to the running service via gRPC. If the service is unreachable, it falls back to reading the bolt database directly. History is auto-pruned on service startup: records older than 30 days or exceeding 200 entries are removed.
 
 ---
 
@@ -47,8 +67,8 @@ hermes accepts a single JSON object with these fields:
 | `timeout` | int | no | `300` | Seconds until auto-action |
 | `timeoutValue` | string | no | `""` | Value returned on timeout |
 | `escValue` | string | no | `""` | Value returned on ESC (defaults to `timeoutValue`) |
-| `title` | string | no | `Notification` | Small uppercase label at the top |
-| `accentColor` | string | no | `#D4AF37` | Theme accent color (hex) |
+| `title` | string | no | `IT Department` | Small uppercase label at the top |
+| `accentColor` | string | no | `#D4A843` | Theme accent color (hex) |
 | `helpUrl` | string | no | `""` | "Need help?" link URL |
 | `id` | string | no | auto-generated | Unique notification ID for the service |
 | `deferDeadline` | string | no | `""` | Max deferral window (e.g., `"24h"`, `"7d"`) |
@@ -101,6 +121,17 @@ Settings URIs are only allowed on their native platform. A `ms-settings:` button
 ```
 
 macOS pane IDs follow the pattern `com.apple.preference.<name>` or `com.apple.<Name>-Settings.extension`. Append `?Anchor` for sub-panes (e.g. `?FileVault`, `?Privacy_AllFiles`). Linux has no standard settings URI scheme.
+
+### Command buttons
+
+Button values prefixed with `cmd:` execute a shell command when clicked. The command runs through the platform shell (`cmd /C` on Windows, `sh -c` on Unix). Arguments, pipes, and shell features are supported.
+
+```json
+{"label": "Restart Now", "value": "cmd:shutdown /r /t 0", "style": "primary"}
+{"label": "Reboot", "value": "cmd:sudo shutdown -r now", "style": "danger"}
+```
+
+Commands are also re-executable from the inbox history view. Empty commands (`cmd:` with no argument) are blocked. Only one primary button per notification is recommended -- the Enter key triggers the first primary button.
 
 ### Deferral config
 
@@ -212,6 +243,8 @@ Detection is fail-open: if the API call fails or the platform is unsupported, he
 | `hermes notify [config]` | Send notification to service (blocks for result) |
 | `hermes list` | List active notifications |
 | `hermes cancel <id>` | Cancel an active notification |
+| `hermes inbox` | View notification history (opens inbox UI) |
+| `hermes inbox --json` | Print notification history as JSON to stdout |
 | `hermes demo` | Show a demo notification |
 | `hermes version` | Print version, build date, Go, and OS info |
 
@@ -224,7 +257,8 @@ Detection is fail-open: if the API call fails or the platform is unsupported, he
 | `--config <json>` | root | JSON config (file path or inline) — routes to service |
 | `--local` | root | Render locally in current session (skip service) |
 | `--port <int>` | serve, notify, list, cancel | gRPC port (default: 4770) |
-| `--db <path>` | serve | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
+| `--db <path>` | serve, inbox | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
+| `--json` | inbox | Print history as JSON instead of opening the UI |
 | `--help` | all | Print help |
 
 ---

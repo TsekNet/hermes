@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/TsekNet/hermes/internal/config"
 	"github.com/TsekNet/hermes/internal/manager"
+	"github.com/TsekNet/hermes/internal/store"
 	pb "github.com/TsekNet/hermes/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -203,6 +205,97 @@ func TestList(t *testing.T) {
 	}
 	if len(resp.Notifications) < 2 {
 		t.Errorf("notifications = %d, want >= 2", len(resp.Notifications))
+	}
+}
+
+func TestListHistory_AfterCompletion(t *testing.T) {
+	t.Parallel()
+
+	s, err := store.Open(filepath.Join(t.TempDir(), "history.db"))
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	t.Cleanup(func() { s.Close() })
+
+	mgr := manager.New(func(n *manager.Notification) {}, s)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	port := lis.Addr().(*net.TCPAddr).Port
+	lis.Close()
+
+	srv := New(mgr, port)
+	go func() { srv.Serve() }()
+	t.Cleanup(srv.Stop)
+	time.Sleep(100 * time.Millisecond)
+
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	client := pb.NewHermesServiceClient(conn)
+	ctx := context.Background()
+
+	// Submit and complete a notification.
+	ch := make(chan *pb.NotifyResponse, 1)
+	go func() {
+		resp, _ := client.Notify(ctx, &pb.NotifyRequest{
+			Id:         "hist-1",
+			ConfigJson: testConfigJSON("History Test"),
+		})
+		ch <- resp
+	}()
+	time.Sleep(200 * time.Millisecond)
+
+	client.ReportChoice(ctx, &pb.ReportChoiceRequest{
+		NotificationId: "hist-1",
+		Value:          "restart",
+	})
+
+	select {
+	case <-ch:
+	case <-time.After(3 * time.Second):
+		t.Fatal("Notify did not return")
+	}
+
+	// ListHistory should return the completed notification.
+	resp, err := client.ListHistory(ctx, &pb.ListHistoryRequest{})
+	if err != nil {
+		t.Fatalf("ListHistory: %v", err)
+	}
+	if len(resp.Records) != 1 {
+		t.Fatalf("expected 1 history record, got %d", len(resp.Records))
+	}
+	r := resp.Records[0]
+	if r.Id != "hist-1" {
+		t.Errorf("ID = %q, want hist-1", r.Id)
+	}
+	if r.Heading != "History Test" {
+		t.Errorf("Heading = %q, want %q", r.Heading, "History Test")
+	}
+	if r.ResponseValue != "restart" {
+		t.Errorf("ResponseValue = %q, want restart", r.ResponseValue)
+	}
+	if r.CompletedUnix == 0 {
+		t.Error("CompletedUnix should be non-zero")
+	}
+}
+
+func TestListHistory_Empty(t *testing.T) {
+	t.Parallel()
+	client, _ := startTestServer(t)
+	ctx := context.Background()
+
+	resp, err := client.ListHistory(ctx, &pb.ListHistoryRequest{})
+	if err != nil {
+		t.Fatalf("ListHistory: %v", err)
+	}
+	if len(resp.Records) != 0 {
+		t.Errorf("expected 0 history records, got %d", len(resp.Records))
 	}
 }
 

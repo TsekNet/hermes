@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -87,6 +88,140 @@ func TestMultipleRecords(t *testing.T) {
 	records, _ := s.LoadAll()
 	if len(records) != 5 {
 		t.Fatalf("expected 5 records, got %d", len(records))
+	}
+}
+
+func TestSaveHistory_And_LoadHistory(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+
+	now := time.Now().Truncate(time.Millisecond)
+	records := []*HistoryRecord{
+		{
+			ID:            "h-1",
+			Config:        &config.NotificationConfig{Heading: "Reboot", Message: "Please reboot", Title: "IT"},
+			ResponseValue: "restart",
+			CreatedAt:     now.Add(-2 * time.Hour),
+			CompletedAt:   now.Add(-1 * time.Hour),
+		},
+		{
+			ID:            "h-2",
+			Config:        &config.NotificationConfig{Heading: "Update", Message: "Install update"},
+			ResponseValue: "timeout:auto",
+			CreatedAt:     now.Add(-3 * time.Hour),
+			CompletedAt:   now, // newest
+		},
+	}
+	for _, r := range records {
+		if err := s.SaveHistory(r); err != nil {
+			t.Fatalf("SaveHistory(%s): %v", r.ID, err)
+		}
+	}
+
+	got, err := s.LoadHistory()
+	if err != nil {
+		t.Fatalf("LoadHistory: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 history records, got %d", len(got))
+	}
+	// LoadHistory sorts newest first.
+	if got[0].ID != "h-2" {
+		t.Errorf("first record ID = %q, want h-2 (newest)", got[0].ID)
+	}
+	if got[1].ID != "h-1" {
+		t.Errorf("second record ID = %q, want h-1", got[1].ID)
+	}
+	if got[0].ResponseValue != "timeout:auto" {
+		t.Errorf("ResponseValue = %q, want timeout:auto", got[0].ResponseValue)
+	}
+	if got[0].Config.Heading != "Update" {
+		t.Errorf("Config.Heading = %q, want Update", got[0].Config.Heading)
+	}
+}
+
+func TestLoadHistory_Empty(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+
+	got, err := s.LoadHistory()
+	if err != nil {
+		t.Fatalf("LoadHistory: %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("expected 0 history records, got %d", len(got))
+	}
+}
+
+func TestPruneHistory_ByAge(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+
+	now := time.Now()
+	s.SaveHistory(&HistoryRecord{
+		ID: "old", Config: &config.NotificationConfig{Heading: "Old"},
+		CompletedAt: now.Add(-48 * time.Hour),
+	})
+	s.SaveHistory(&HistoryRecord{
+		ID: "recent", Config: &config.NotificationConfig{Heading: "Recent"},
+		CompletedAt: now.Add(-1 * time.Hour),
+	})
+
+	if err := s.PruneHistory(24*time.Hour, 1000); err != nil {
+		t.Fatalf("PruneHistory: %v", err)
+	}
+
+	got, _ := s.LoadHistory()
+	if len(got) != 1 {
+		t.Fatalf("expected 1 record after prune, got %d", len(got))
+	}
+	if got[0].ID != "recent" {
+		t.Errorf("surviving record ID = %q, want recent", got[0].ID)
+	}
+}
+
+func TestPruneHistory_ByCount(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+
+	now := time.Now()
+	for i := 0; i < 5; i++ {
+		s.SaveHistory(&HistoryRecord{
+			ID:          fmt.Sprintf("h-%d", i),
+			Config:      &config.NotificationConfig{Heading: fmt.Sprintf("N%d", i)},
+			CompletedAt: now.Add(time.Duration(i) * time.Minute),
+		})
+	}
+
+	if err := s.PruneHistory(999*time.Hour, 2); err != nil {
+		t.Fatalf("PruneHistory: %v", err)
+	}
+
+	got, _ := s.LoadHistory()
+	if len(got) != 2 {
+		t.Fatalf("expected 2 records after prune by count, got %d", len(got))
+	}
+}
+
+func TestSaveHistory_Isolation(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+
+	s.Save(&Record{
+		ID: "active-1", Config: &config.NotificationConfig{Heading: "Active"}, State: "pending",
+	})
+	s.SaveHistory(&HistoryRecord{
+		ID: "done-1", Config: &config.NotificationConfig{Heading: "Done"},
+		CompletedAt: time.Now(),
+	})
+
+	active, _ := s.LoadAll()
+	history, _ := s.LoadHistory()
+	if len(active) != 1 || active[0].ID != "active-1" {
+		t.Errorf("active records: got %d, want 1 with ID active-1", len(active))
+	}
+	if len(history) != 1 || history[0].ID != "done-1" {
+		t.Errorf("history records: got %d, want 1 with ID done-1", len(history))
 	}
 }
 

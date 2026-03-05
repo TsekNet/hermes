@@ -5,12 +5,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/TsekNet/hermes/internal/auth"
 	"github.com/TsekNet/hermes/internal/manager"
+	"github.com/TsekNet/hermes/internal/ratelimit"
 	"github.com/TsekNet/hermes/internal/server"
 	"github.com/TsekNet/hermes/internal/store"
 	"github.com/google/deck"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -44,6 +48,17 @@ func runServe(_ *cobra.Command, _ []string) error {
 	}
 	defer s.Close()
 
+	if err := s.PruneHistory(30*24*time.Hour, 200); err != nil {
+		deck.Warningf("prune history: %v", err)
+	}
+
+	token, err := auth.GenerateToken()
+	if err != nil {
+		return fmt.Errorf("generate session token: %w", err)
+	}
+	defer auth.RemoveToken()
+	deck.Infof("session token written to %s", auth.TokenPath())
+
 	mgr := manager.New(reshowNotification, s)
 
 	restored := mgr.Restore()
@@ -51,7 +66,13 @@ func runServe(_ *cobra.Command, _ []string) error {
 		deck.Infof("restored %d notification(s) from disk", restored)
 	}
 
-	srv := server.New(mgr, flagPort)
+	rl := ratelimit.New(10, 2, []string{"/hermes.HermesService/Notify"})
+
+	var interceptors []grpc.UnaryServerInterceptor
+	interceptors = append(interceptors, auth.UnaryInterceptor(token))
+	interceptors = append(interceptors, rl.UnaryInterceptor())
+
+	srv := server.New(mgr, flagPort, interceptors...)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)

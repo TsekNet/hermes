@@ -1,16 +1,16 @@
 {
   "heading": "macOS 15.3 Update Available",
   "message": "Review the update details below, then click Update to proceed.",
-  "title": "NVIDIA PLATFORM",
-  "accentColor": "#76B900",
+  "title": "Platform Eng",
+  "accentColor": "#D4A843",
   "timeout": 300,
   "timeoutValue": "defer_4h",
   "deferDeadline": "7d",
   "maxDefers": 5,
   "images": [
-    "https://placehold.co/600x400/1a1a2e/76B900?text=Update+Overview",
-    "https://placehold.co/600x400/1a1a2e/76B900?text=Security+Fixes",
-    "https://placehold.co/600x400/1a1a2e/76B900?text=Timeline"
+    "https://placehold.co/600x400/1a1a2e/D4A843?text=Update+Overview",
+    "https://placehold.co/600x400/1a1a2e/D4A843?text=Security+Fixes",
+    "https://placehold.co/600x400/1a1a2e/D4A843?text=Timeline"
   ],
   "buttons": [
     {

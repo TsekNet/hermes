@@ -1,8 +1,8 @@
 {
   "heading": "Software Update Available",
   "message": "A new version of Company VPN has been downloaded and is ready to install. Installation takes about 2 minutes.",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "timeout": 600,
   "timeoutValue": "install",
   "escValue": "defer_4h",

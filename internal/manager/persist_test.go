@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -126,6 +127,89 @@ func TestRestore_ReshowsFiredNotifications(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("timeout waiting for reshow callback")
+	}
+}
+
+func TestComplete_WritesHistory(t *testing.T) {
+	t.Parallel()
+	s := openTestStore(t)
+	mgr := New(nil, s)
+
+	cfg := testConfig("History Write")
+	id, _ := mgr.Submit(cfg)
+	mgr.ReportChoice(id, "restart")
+
+	time.Sleep(50 * time.Millisecond)
+
+	records, err := s.LoadHistory()
+	if err != nil {
+		t.Fatalf("LoadHistory: %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("expected 1 history record, got %d", len(records))
+	}
+	if records[0].ID != id {
+		t.Errorf("history ID = %q, want %q", records[0].ID, id)
+	}
+	if records[0].ResponseValue != "restart" {
+		t.Errorf("ResponseValue = %q, want restart", records[0].ResponseValue)
+	}
+	if records[0].Config.Heading != "History Write" {
+		t.Errorf("Config.Heading = %q, want %q", records[0].Config.Heading, "History Write")
+	}
+	if records[0].CompletedAt.IsZero() {
+		t.Error("CompletedAt should be set")
+	}
+}
+
+func TestCancel_WritesHistory(t *testing.T) {
+	t.Parallel()
+	s := openTestStore(t)
+	mgr := New(nil, s)
+
+	cfg := testConfig("Cancel History")
+	id, _ := mgr.Submit(cfg)
+	mgr.Cancel(id)
+
+	time.Sleep(50 * time.Millisecond)
+
+	records, err := s.LoadHistory()
+	if err != nil {
+		t.Fatalf("LoadHistory: %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("expected 1 history record, got %d", len(records))
+	}
+	if records[0].ResponseValue != "cancelled" {
+		t.Errorf("ResponseValue = %q, want cancelled", records[0].ResponseValue)
+	}
+}
+
+func TestListHistory(t *testing.T) {
+	t.Parallel()
+	s := openTestStore(t)
+	mgr := New(nil, s)
+
+	// Complete two notifications to populate history.
+	for i, val := range []string{"ok", "timeout:auto"} {
+		cfg := testConfig(fmt.Sprintf("LH-%d", i))
+		id, _ := mgr.Submit(cfg)
+		mgr.ReportChoice(id, val)
+	}
+	time.Sleep(50 * time.Millisecond)
+
+	got := mgr.ListHistory()
+	if len(got) != 2 {
+		t.Fatalf("ListHistory: got %d records, want 2", len(got))
+	}
+}
+
+func TestListHistory_NilStore(t *testing.T) {
+	t.Parallel()
+	mgr := New(nil, nil)
+	got := mgr.ListHistory()
+	if got != nil {
+		t.Errorf("expected nil from ListHistory with nil store, got %d records", len(got))
 	}
 }
 

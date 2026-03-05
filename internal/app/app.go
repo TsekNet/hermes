@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/TsekNet/hermes/internal/config"
-	"github.com/TsekNet/hermes/internal/urischeme"
+	"github.com/TsekNet/hermes/internal/action"
 	"github.com/TsekNet/hermes/internal/watch"
 	"github.com/google/deck"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -128,11 +128,19 @@ func (a *App) Ready() {
 	wailsRuntime.WindowShow(a.ctx)
 }
 
-// Respond handles the user's choice. Opens URLs, sends gRPC, quits.
+// Respond handles the user's choice. Opens URLs, runs commands, sends gRPC, quits.
 func (a *App) Respond(value string) {
 	if strings.HasPrefix(value, "url:") {
 		a.openURL(strings.TrimPrefix(value, "url:"))
-		return // URL opens don't close the window
+		return
+	}
+
+	if action.IsCommand(value) {
+		if !action.Allowed(value) {
+			deck.Warningf("blocked command: %s", value)
+		} else if out, err := action.RunCommand(value); err != nil {
+			deck.Errorf("cmd: %v: %s", err, out)
+		}
 	}
 
 	a.Result = value
@@ -161,7 +169,7 @@ func (a *App) OpenHelp() {
 }
 
 func (a *App) openURL(rawURL string) {
-	if !urischeme.Allowed(rawURL) {
+	if !action.Allowed(rawURL) {
 		deck.Warningf("blocked URI: %s", rawURL)
 		return
 	}

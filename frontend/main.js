@@ -7,24 +7,158 @@
   var responded = false;
   var timer = null;
   var Backend = null;
+  var InboxBackend = null;
   var carouselIndex = 0;
   var carouselTotal = 0;
 
   var validStyles = { primary: true, secondary: true, danger: true };
 
-  function findApp() {
+  function findBackend(method) {
     if (!window.go) return null;
     for (var ns in window.go) {
-      if (window.go[ns] && window.go[ns].App) return window.go[ns].App;
+      if (!window.go[ns]) continue;
+      for (var cls in window.go[ns]) {
+        if (window.go[ns][cls] && typeof window.go[ns][cls][method] === "function") {
+          return window.go[ns][cls];
+        }
+      }
     }
     return null;
   }
 
   function init() {
-    Backend = findApp();
-    if (Backend) {
-      Backend.GetConfig().then(configure);
+    InboxBackend = findBackend("GetHistory");
+    if (InboxBackend) { initInbox(); return; }
+    Backend = findBackend("GetConfig");
+    if (Backend) { Backend.GetConfig().then(configure); return; }
+
+    var attempts = 0;
+    var poll = setInterval(function() {
+      attempts++;
+      InboxBackend = findBackend("GetHistory");
+      if (InboxBackend) { clearInterval(poll); initInbox(); return; }
+      Backend = findBackend("GetConfig");
+      if (Backend) { clearInterval(poll); Backend.GetConfig().then(configure); return; }
+      if (attempts > 50) clearInterval(poll);
+    }, 100);
+  }
+
+  function initInbox() {
+    document.body.innerHTML = "";
+    document.body.className = "inbox-body";
+
+    var accent = document.createElement("div");
+    accent.className = "accent";
+    document.body.appendChild(accent);
+
+    var container = document.createElement("div");
+    container.className = "inbox-container";
+
+    var header = document.createElement("div");
+    header.className = "inbox-header";
+    var title = document.createElement("span");
+    title.className = "title-text";
+    title.textContent = "NOTIFICATION HISTORY";
+    header.appendChild(title);
+    container.appendChild(header);
+
+    var list = document.createElement("div");
+    list.className = "inbox-list";
+    list.id = "inbox-list";
+    container.appendChild(list);
+
+    document.body.appendChild(container);
+
+    InboxBackend.GetHistory().then(function(entries) {
+      renderInbox(entries || []);
+      InboxBackend.Ready();
+    }).catch(function(err) {
+      console.error("GetHistory failed:", err);
+      var list = document.getElementById("inbox-list");
+      list.textContent = "Error loading history: " + err;
+      InboxBackend.Ready();
+    });
+  }
+
+  function renderInbox(entries) {
+    var list = document.getElementById("inbox-list");
+    if (entries.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "inbox-empty";
+      empty.textContent = "No notification history";
+      list.appendChild(empty);
+      return;
     }
+    for (var i = 0; i < entries.length; i++) {
+      list.appendChild(buildInboxCard(entries[i]));
+    }
+  }
+
+  function buildInboxCard(entry) {
+    var card = document.createElement("div");
+    card.className = "inbox-card";
+
+    var top = document.createElement("div");
+    top.className = "inbox-card-top";
+
+    var heading = document.createElement("span");
+    heading.className = "inbox-card-heading";
+    heading.textContent = entry.heading;
+    top.appendChild(heading);
+
+    var actionable = entry.responseValue && entry.responseValue !== "dismiss"
+        && entry.responseValue !== "cancelled" && entry.responseValue.indexOf("timeout") !== 0;
+
+    var badge = document.createElement(actionable ? "button" : "span");
+    badge.className = "inbox-card-badge";
+    var label = entry.responseValue.replace(/_/g, " ");
+    badge.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+    if (entry.responseValue === "dismiss" || entry.responseValue === "cancelled") {
+      badge.classList.add("badge-muted");
+    } else if (entry.responseValue.indexOf("timeout") === 0) {
+      badge.classList.add("badge-warn");
+    } else {
+      badge.classList.add("badge-ok");
+      badge.classList.add("badge-action");
+    }
+    if (actionable) {
+      badge.setAttribute("data-id", entry.id);
+      badge.setAttribute("data-value", entry.responseValue);
+      badge.addEventListener("click", function(e) {
+        var b = e.target;
+        var id = b.getAttribute("data-id");
+        var val = b.getAttribute("data-value");
+        b.disabled = true;
+        b.textContent = "Running...";
+        InboxBackend.RunAction(id, val).then(function(result) {
+          b.textContent = result === "ok" ? "Done" : result;
+        }).catch(function() {
+          b.textContent = "Failed";
+        });
+      });
+    }
+    top.appendChild(badge);
+    card.appendChild(top);
+
+    if (entry.message) {
+      var msg = document.createElement("div");
+      msg.className = "inbox-card-message";
+      msg.textContent = entry.message;
+      card.appendChild(msg);
+    }
+
+    var meta = document.createElement("div");
+    meta.className = "inbox-card-meta";
+    var parts = [];
+    if (entry.source) parts.push(entry.source);
+    if (entry.completedAt) {
+      var d = new Date(entry.completedAt);
+      parts.push(d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}));
+    }
+    meta.textContent = parts.join("  \u00B7  ");
+    card.appendChild(meta);
+
+    return card;
   }
 
   function configure(cfg) {
@@ -35,7 +169,7 @@
       document.documentElement.style.setProperty("--btn-primary-bg", cfg.accentColor);
     }
 
-    document.getElementById("title").textContent = cfg.title || "NVIDIA IT";
+    document.getElementById("title").textContent = cfg.title || "";
     document.getElementById("heading").textContent = cfg.heading || "";
     document.getElementById("message").textContent = cfg.message || "";
 
@@ -212,7 +346,12 @@
   });
 
   document.addEventListener("keydown", function(e) {
+    if (!document.hasFocus()) return;
     if (e.keyCode === 27) respond(escValue);
+    if (e.keyCode === 13) {
+      var primary = document.querySelector(".btn-primary");
+      if (primary) respond(primary.getAttribute("data-value"));
+    }
     if (carouselTotal > 1) {
       if (e.keyCode === 37) carouselPrev();
       if (e.keyCode === 39) carouselNext();

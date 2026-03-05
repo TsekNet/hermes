@@ -28,6 +28,10 @@ service HermesService {
   // List returns all active (pending/deferred) notifications.
   // Called by: hermes list
   rpc List(ListRequest) returns (ListResponse);
+
+  // ListHistory returns completed notification history.
+  // Called by: hermes inbox
+  rpc ListHistory(ListHistoryRequest) returns (ListHistoryResponse);
 }
 
 // --- Notify ---
@@ -107,4 +111,22 @@ message NotificationInfo {
   int32 defer_count = 4;
   int64 deadline_unix = 5; // 0 = no deadline
   int64 created_unix = 6;
+}
+
+// --- ListHistory ---
+
+message ListHistoryRequest {}
+
+message ListHistoryResponse {
+  repeated HistoryEntry records = 1;
+}
+
+message HistoryEntry {
+  string id = 1;
+  string heading = 2;
+  string message = 3;
+  string source = 4;
+  string response_value = 5;
+  int64 created_unix = 6;
+  int64 completed_unix = 7;
 }

@@ -1,8 +1,8 @@
 {
   "heading": "Restart Required",
   "message": "Security updates need a restart. Short deferral window for testing.",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "timeout": 30,
   "timeoutValue": "restart",
   "escValue": "defer_10s",

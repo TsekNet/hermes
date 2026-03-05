@@ -1,8 +1,8 @@
 {
   "heading": "VPN Maintenance",
   "message": "VPN will disconnect. This notification auto-actions in 1 minute.",
-  "title": "NVIDIA NETWORK",
-  "accentColor": "#76B900",
+  "title": "Network Ops",
+  "accentColor": "#D4A843",
   "timeout": 20,
   "timeoutValue": "disconnect",
   "deferDeadline": "1m",

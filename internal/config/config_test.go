@@ -181,11 +181,11 @@ func TestApplyDefaults(t *testing.T) {
 				if c.TimeoutSeconds != 300 {
 					t.Errorf("timeout = %d, want 300", c.TimeoutSeconds)
 				}
-				if c.Title != "NVIDIA IT" {
-					t.Errorf("title = %q, want NVIDIA IT", c.Title)
+				if c.Title != "IT Department" {
+					t.Errorf("title = %q, want IT Department", c.Title)
 				}
-				if c.AccentColor != "#76B900" {
-					t.Errorf("accent = %q, want #76B900", c.AccentColor)
+				if c.AccentColor != "#D4A843" {
+					t.Errorf("accent = %q, want #D4A843", c.AccentColor)
 				}
 			},
 		},

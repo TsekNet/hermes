@@ -68,6 +68,12 @@ Override with `hermes serve --db /path/to/hermes.db`.
 
 **What survives a restart:** notification config, defer count, deadline, state. **What doesn't:** in-memory timer offsets (restored notifications are re-shown immediately on startup rather than waiting for the remaining deferral period).
 
+### History
+
+When a notification completes (user action, timeout, or cancellation), the manager saves a `HistoryRecord` to a separate `history` bbolt bucket. This powers the inbox feature (`hermes inbox`).
+
+On startup, the service prunes history records older than 30 days or exceeding 200 entries. The `PruneHistory` method enforces both age and count limits in a single pass.
+
 ---
 
 ## Packages
@@ -82,6 +88,7 @@ hermes/
 │   ├── notify.go                  Send notification via gRPC
 │   ├── list.go                    List active notifications
 │   ├── cancel.go                  Cancel a notification
+│   ├── inbox.go                   View notification history (UI or JSON)
 │   ├── demo.go                    Demo subcommand and config
 │   └── version.go                 Version/build-date vars and subcommand
 │
@@ -92,6 +99,7 @@ hermes/
 │
 ├── internal/
 │   ├── app/                       Wails App struct, Go<->JS bindings, window positioning
+│   ├── auth/                      Per-session token auth (generate, validate, gRPC interceptor)
 │   ├── client/                    gRPC client (CLI + UI subprocess)
 │   ├── config/                    JSON config, types, validation, deferral parsing
 │   ├── logging/                   Platform-specific log backends
@@ -99,9 +107,10 @@ hermes/
 │   │   └── windows.go             Windows Event Log
 │   ├── dnd/                       Do Not Disturb detection (per-platform)
 │   ├── manager/                   Notification lifecycle (state, deferrals, deadlines, DND)
+│   ├── ratelimit/                 Token-bucket rate limiter for gRPC RPCs
 │   ├── server/                    gRPC server implementation
 │   ├── store/                     bbolt persistence (deferral state survives restarts)
-│   ├── urischeme/                 URI allow-list (platform-aware: https, ms-settings, x-apple.systempreferences)
+│   ├── action/                    Button value dispatch (url:, cmd:, ms-settings:, x-apple.systempreferences:)
 │   └── watch/                     Filesystem monitoring (fsnotify wrapper)
 │
 ├── frontend/                      The web UI (embedded into binary)
@@ -122,6 +131,24 @@ The `internal/` packages import only Go stdlib and each other — no Wails depen
 
 All IPC uses gRPC over TCP on `127.0.0.1:4770` (configurable via `--port`). No TLS — localhost only. The service binds to the loopback interface exclusively.
 
+### Authentication
+
+On startup, `hermes serve` generates a 32-byte cryptographically random session token and writes it to a platform-specific path with `0600` permissions:
+
+| Platform | Token path |
+|----------|------------|
+| Windows  | `%LOCALAPPDATA%\hermes\session.token` |
+| macOS    | `~/Library/Application Support/hermes/session.token` |
+| Linux    | `$XDG_RUNTIME_DIR/hermes/session.token` (or `$XDG_DATA_HOME/hermes/session.token`) |
+
+Every gRPC call must include the token in the `authorization` metadata header. The client auto-loads the token from disk on `Dial`. The token is deleted on service shutdown.
+
+This prevents blind port-scanning processes from interacting with the service. Only processes that can read the user's token file (same UID, `0600`) can send or read notifications.
+
+### Rate limiting
+
+The `Notify` RPC is rate-limited to a burst of 10 with a refill rate of 2/second. This prevents runaway scripts from spamming the user with notifications. Other RPCs (List, Cancel, etc.) are not rate-limited.
+
 RPCs:
 
 | RPC | Direction | Purpose |
@@ -131,6 +158,7 @@ RPCs:
 | `ReportChoice` | UI → Service | Report user action |
 | `Cancel` | CLI → Service | Cancel an active notification |
 | `List` | CLI → Service | List active notifications |
+| `ListHistory` | CLI → Service | Retrieve completed notification history |
 
 ---
 
@@ -217,11 +245,18 @@ The algorithm uses `WindowCenter()` as a reference point, then derives the notif
 The frontend is vanilla HTML/CSS/JS — no framework, no bundler, no node_modules. CSS uses custom properties (`--accent`) set at runtime from `accentColor` in the config.
 
 JS communicates with Go through Wails runtime bindings:
-- `window.go.app.App.GetConfig()` — populate heading, message, buttons, images, countdown
-- `window.go.app.App.DeferralAllowed()` — check if defer buttons should be shown
-- `window.go.app.App.Ready()` — signal Go to position and show the window
-- `window.go.app.App.Respond(value)` — send the response (button click or timeout)
-- `window.go.app.App.OpenHelp()` — open help URL in system browser
+
+**Notification view (`App`):**
+- `GetConfig()` — populate heading, message, buttons, images, countdown
+- `DeferralAllowed()` — check if defer buttons should be shown
+- `Ready()` — signal Go to position and show the window
+- `Respond(value)` — send the response (button click or timeout)
+- `OpenHelp()` — open help URL in system browser
+
+**Inbox view (`InboxApp`):**
+- `GetHistory()` — return completed notification entries
+- `RunAction(id, value)` — re-execute a `cmd:`-prefixed action from history
+- `Ready()` — center and show the inbox window
 
 Wails event channels:
 - `fs:event` — filesystem change events from the watch package (fields: `path`, `op`)

@@ -589,6 +589,178 @@ func (x *NotificationInfo) GetCreatedUnix() int64 {
 	return 0
 }
 
+type ListHistoryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListHistoryRequest) Reset() {
+	*x = ListHistoryRequest{}
+	mi := &file_proto_hermes_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListHistoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListHistoryRequest) ProtoMessage() {}
+
+func (x *ListHistoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_hermes_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListHistoryRequest.ProtoReflect.Descriptor instead.
+func (*ListHistoryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_hermes_proto_rawDescGZIP(), []int{11}
+}
+
+type ListHistoryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Records       []*HistoryEntry        `protobuf:"bytes,1,rep,name=records,proto3" json:"records,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListHistoryResponse) Reset() {
+	*x = ListHistoryResponse{}
+	mi := &file_proto_hermes_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListHistoryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListHistoryResponse) ProtoMessage() {}
+
+func (x *ListHistoryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_hermes_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListHistoryResponse.ProtoReflect.Descriptor instead.
+func (*ListHistoryResponse) Descriptor() ([]byte, []int) {
+	return file_proto_hermes_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ListHistoryResponse) GetRecords() []*HistoryEntry {
+	if x != nil {
+		return x.Records
+	}
+	return nil
+}
+
+type HistoryEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Heading       string                 `protobuf:"bytes,2,opt,name=heading,proto3" json:"heading,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	Source        string                 `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`
+	ResponseValue string                 `protobuf:"bytes,5,opt,name=response_value,json=responseValue,proto3" json:"response_value,omitempty"`
+	CreatedUnix   int64                  `protobuf:"varint,6,opt,name=created_unix,json=createdUnix,proto3" json:"created_unix,omitempty"`
+	CompletedUnix int64                  `protobuf:"varint,7,opt,name=completed_unix,json=completedUnix,proto3" json:"completed_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HistoryEntry) Reset() {
+	*x = HistoryEntry{}
+	mi := &file_proto_hermes_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HistoryEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HistoryEntry) ProtoMessage() {}
+
+func (x *HistoryEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_hermes_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HistoryEntry.ProtoReflect.Descriptor instead.
+func (*HistoryEntry) Descriptor() ([]byte, []int) {
+	return file_proto_hermes_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *HistoryEntry) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *HistoryEntry) GetHeading() string {
+	if x != nil {
+		return x.Heading
+	}
+	return ""
+}
+
+func (x *HistoryEntry) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *HistoryEntry) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *HistoryEntry) GetResponseValue() string {
+	if x != nil {
+		return x.ResponseValue
+	}
+	return ""
+}
+
+func (x *HistoryEntry) GetCreatedUnix() int64 {
+	if x != nil {
+		return x.CreatedUnix
+	}
+	return 0
+}
+
+func (x *HistoryEntry) GetCompletedUnix() int64 {
+	if x != nil {
+		return x.CompletedUnix
+	}
+	return 0
+}
+
 var File_proto_hermes_proto protoreflect.FileDescriptor
 
 const file_proto_hermes_proto_rawDesc = "" +
@@ -627,13 +799,25 @@ const file_proto_hermes_proto_rawDesc = "" +
 	"\vdefer_count\x18\x04 \x01(\x05R\n" +
 	"deferCount\x12#\n" +
 	"\rdeadline_unix\x18\x05 \x01(\x03R\fdeadlineUnix\x12!\n" +
-	"\fcreated_unix\x18\x06 \x01(\x03R\vcreatedUnix2\xc7\x02\n" +
+	"\fcreated_unix\x18\x06 \x01(\x03R\vcreatedUnix\"\x14\n" +
+	"\x12ListHistoryRequest\"E\n" +
+	"\x13ListHistoryResponse\x12.\n" +
+	"\arecords\x18\x01 \x03(\v2\x14.hermes.HistoryEntryR\arecords\"\xdb\x01\n" +
+	"\fHistoryEntry\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
+	"\aheading\x18\x02 \x01(\tR\aheading\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x16\n" +
+	"\x06source\x18\x04 \x01(\tR\x06source\x12%\n" +
+	"\x0eresponse_value\x18\x05 \x01(\tR\rresponseValue\x12!\n" +
+	"\fcreated_unix\x18\x06 \x01(\x03R\vcreatedUnix\x12%\n" +
+	"\x0ecompleted_unix\x18\a \x01(\x03R\rcompletedUnix2\x8f\x03\n" +
 	"\rHermesService\x127\n" +
 	"\x06Notify\x12\x15.hermes.NotifyRequest\x1a\x16.hermes.NotifyResponse\x12F\n" +
 	"\vGetUIConfig\x12\x1a.hermes.GetUIConfigRequest\x1a\x1b.hermes.GetUIConfigResponse\x12I\n" +
 	"\fReportChoice\x12\x1b.hermes.ReportChoiceRequest\x1a\x1c.hermes.ReportChoiceResponse\x127\n" +
 	"\x06Cancel\x12\x15.hermes.CancelRequest\x1a\x16.hermes.CancelResponse\x121\n" +
-	"\x04List\x12\x13.hermes.ListRequest\x1a\x14.hermes.ListResponseB*Z(github.com/TsekNet/hermes/proto/hermespbb\x06proto3"
+	"\x04List\x12\x13.hermes.ListRequest\x1a\x14.hermes.ListResponse\x12F\n" +
+	"\vListHistory\x12\x1a.hermes.ListHistoryRequest\x1a\x1b.hermes.ListHistoryResponseB*Z(github.com/TsekNet/hermes/proto/hermespbb\x06proto3"
 
 var (
 	file_proto_hermes_proto_rawDescOnce sync.Once
@@ -647,7 +831,7 @@ func file_proto_hermes_proto_rawDescGZIP() []byte {
 	return file_proto_hermes_proto_rawDescData
 }
 
-var file_proto_hermes_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_proto_hermes_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_proto_hermes_proto_goTypes = []any{
 	(*NotifyRequest)(nil),        // 0: hermes.NotifyRequest
 	(*NotifyResponse)(nil),       // 1: hermes.NotifyResponse
@@ -660,24 +844,30 @@ var file_proto_hermes_proto_goTypes = []any{
 	(*ListRequest)(nil),          // 8: hermes.ListRequest
 	(*ListResponse)(nil),         // 9: hermes.ListResponse
 	(*NotificationInfo)(nil),     // 10: hermes.NotificationInfo
+	(*ListHistoryRequest)(nil),   // 11: hermes.ListHistoryRequest
+	(*ListHistoryResponse)(nil),  // 12: hermes.ListHistoryResponse
+	(*HistoryEntry)(nil),         // 13: hermes.HistoryEntry
 }
 var file_proto_hermes_proto_depIdxs = []int32{
 	10, // 0: hermes.ListResponse.notifications:type_name -> hermes.NotificationInfo
-	0,  // 1: hermes.HermesService.Notify:input_type -> hermes.NotifyRequest
-	2,  // 2: hermes.HermesService.GetUIConfig:input_type -> hermes.GetUIConfigRequest
-	4,  // 3: hermes.HermesService.ReportChoice:input_type -> hermes.ReportChoiceRequest
-	6,  // 4: hermes.HermesService.Cancel:input_type -> hermes.CancelRequest
-	8,  // 5: hermes.HermesService.List:input_type -> hermes.ListRequest
-	1,  // 6: hermes.HermesService.Notify:output_type -> hermes.NotifyResponse
-	3,  // 7: hermes.HermesService.GetUIConfig:output_type -> hermes.GetUIConfigResponse
-	5,  // 8: hermes.HermesService.ReportChoice:output_type -> hermes.ReportChoiceResponse
-	7,  // 9: hermes.HermesService.Cancel:output_type -> hermes.CancelResponse
-	9,  // 10: hermes.HermesService.List:output_type -> hermes.ListResponse
-	6,  // [6:11] is the sub-list for method output_type
-	1,  // [1:6] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	13, // 1: hermes.ListHistoryResponse.records:type_name -> hermes.HistoryEntry
+	0,  // 2: hermes.HermesService.Notify:input_type -> hermes.NotifyRequest
+	2,  // 3: hermes.HermesService.GetUIConfig:input_type -> hermes.GetUIConfigRequest
+	4,  // 4: hermes.HermesService.ReportChoice:input_type -> hermes.ReportChoiceRequest
+	6,  // 5: hermes.HermesService.Cancel:input_type -> hermes.CancelRequest
+	8,  // 6: hermes.HermesService.List:input_type -> hermes.ListRequest
+	11, // 7: hermes.HermesService.ListHistory:input_type -> hermes.ListHistoryRequest
+	1,  // 8: hermes.HermesService.Notify:output_type -> hermes.NotifyResponse
+	3,  // 9: hermes.HermesService.GetUIConfig:output_type -> hermes.GetUIConfigResponse
+	5,  // 10: hermes.HermesService.ReportChoice:output_type -> hermes.ReportChoiceResponse
+	7,  // 11: hermes.HermesService.Cancel:output_type -> hermes.CancelResponse
+	9,  // 12: hermes.HermesService.List:output_type -> hermes.ListResponse
+	12, // 13: hermes.HermesService.ListHistory:output_type -> hermes.ListHistoryResponse
+	8,  // [8:14] is the sub-list for method output_type
+	2,  // [2:8] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_hermes_proto_init() }
@@ -691,7 +881,7 @@ func file_proto_hermes_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_hermes_proto_rawDesc), len(file_proto_hermes_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

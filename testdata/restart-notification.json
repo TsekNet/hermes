@@ -1,12 +1,12 @@
 {
   "heading": "System Restart Required",
   "message": "Your computer needs to restart to apply security updates. Please save your work and close all applications.",
-  "title": "NVIDIA IT",
-  "accentColor": "#76B900",
+  "title": "IT Department",
+  "accentColor": "#D4A843",
   "timeout": 300,
   "timeoutValue": "restart",
   "escValue": "defer_1h",
-  "helpUrl": "https://help.nvidia.com/restart",
+  "helpUrl": "https://example.com/help/restart",
   "buttons": [
     {
       "label": "Defer",

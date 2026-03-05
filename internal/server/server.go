@@ -27,11 +27,16 @@ type Server struct {
 }
 
 // New creates a Server bound to the given manager and port.
-func New(mgr *manager.Manager, port int) *Server {
+// Interceptors are applied in order: first in the list runs outermost.
+func New(mgr *manager.Manager, port int, interceptors ...grpc.UnaryServerInterceptor) *Server {
+	opts := []grpc.ServerOption{grpc.MaxRecvMsgSize(128 * 1024)}
+	if len(interceptors) > 0 {
+		opts = append(opts, grpc.ChainUnaryInterceptor(interceptors...))
+	}
 	s := &Server{
 		mgr:  mgr,
 		port: port,
-		grpc: grpc.NewServer(grpc.MaxRecvMsgSize(128 * 1024)), // 128 KB max inbound message
+		grpc: grpc.NewServer(opts...),
 	}
 	pb.RegisterHermesServiceServer(s.grpc, s)
 	return s
@@ -105,6 +110,26 @@ func (s *Server) ReportChoice(_ context.Context, req *pb.ReportChoiceRequest) (*
 func (s *Server) Cancel(_ context.Context, req *pb.CancelRequest) (*pb.CancelResponse, error) {
 	found := s.mgr.Cancel(req.NotificationId)
 	return &pb.CancelResponse{Found: found}, nil
+}
+
+func (s *Server) ListHistory(_ context.Context, _ *pb.ListHistoryRequest) (*pb.ListHistoryResponse, error) {
+	records := s.mgr.ListHistory()
+	var out []*pb.HistoryEntry
+	for _, r := range records {
+		if r.Config == nil {
+			continue
+		}
+		out = append(out, &pb.HistoryEntry{
+			Id:            r.ID,
+			Heading:       r.Config.Heading,
+			Message:       r.Config.Message,
+			Source:        r.Config.Title,
+			ResponseValue: r.ResponseValue,
+			CreatedUnix:   r.CreatedAt.Unix(),
+			CompletedUnix: r.CompletedAt.Unix(),
+		})
+	}
+	return &pb.ListHistoryResponse{Records: out}, nil
 }
 
 func (s *Server) List(_ context.Context, _ *pb.ListRequest) (*pb.ListResponse, error) {
