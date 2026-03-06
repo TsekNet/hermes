@@ -47,8 +47,8 @@
       Execute="deferred" Impersonate="no" Return="ignore" />
 
     <InstallExecuteSequence>
-      <Custom Action="InstallMotdHook" Before="InstallFinalize">NOT Installed OR UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="RemoveMotdHook" Before="RemoveFiles">REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="InstallMotdHook" Before="InstallFinalize" Condition="NOT Installed OR UPGRADINGPRODUCTCODE" />
+      <Custom Action="RemoveMotdHook" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
     </InstallExecuteSequence>
 
     <Feature Id="ProductFeature" Title="Hermes" Level="1">
