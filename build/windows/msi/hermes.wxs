@@ -42,19 +42,19 @@
     <SetProperty Id="StopHermes" Before="StopHermes" Sequence="execute"
       Value="&quot;[SystemFolder]taskkill.exe&quot; /F /IM hermes.exe" />
     <CustomAction Id="StopHermes"
-      BinaryRef="Wix4UtilCA_X86" DllEntry="WixQuietExec"
-      Execute="deferred" Impersonate="no" Return="ignore" />
+      BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
+      Execute="immediate" Return="ignore" />
 
     <SetProperty Id="InstallMotdHook" Before="InstallMotdHook" Sequence="execute"
       Value="&quot;[SystemFolder]WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -ExecutionPolicy Bypass -File &quot;[HermesDir]install-motd-hook.ps1&quot;" />
     <CustomAction Id="InstallMotdHook"
-      BinaryRef="Wix4UtilCA_X86" DllEntry="WixQuietExec"
+      BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
       Execute="deferred" Impersonate="no" Return="ignore" />
 
     <SetProperty Id="RemoveMotdHook" Before="RemoveMotdHook" Sequence="execute"
       Value="&quot;[SystemFolder]WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -ExecutionPolicy Bypass -File &quot;[HermesDir]remove-motd-hook.ps1&quot;" />
     <CustomAction Id="RemoveMotdHook"
-      BinaryRef="Wix4UtilCA_X86" DllEntry="WixQuietExec"
+      BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
       Execute="deferred" Impersonate="no" Return="ignore" />
 
     <InstallExecuteSequence>
