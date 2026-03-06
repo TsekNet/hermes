@@ -8,9 +8,7 @@
     UpgradeCode="B7E8A1C2-9D4E-4F5A-8B3C-1E2D3F4A5B6C"
     Scope="perMachine">
 
-    <MajorUpgrade
-      AllowDowngrades="yes"
-      DowngradeErrorMessage="A newer version of Hermes is already installed." />
+    <MajorUpgrade AllowDowngrades="yes" />
 
     <MediaTemplate EmbedCab="yes" />
 
@@ -34,7 +32,7 @@
         <Component Id="HermesAutostart" Guid="D4E5F6A7-B890-1234-CDEF-567890ABCDEF">
           <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run" Name="Hermes" Value="&quot;[HermesDir]hermes.exe&quot; serve" Type="string" KeyPath="yes" />
         </Component>
-        <Component Id="CleanupDir" Guid="E5F6A7B8-C901-2345-DEFG-678901BCDEF0">
+        <Component Id="CleanupDir" Guid="E5F6A7B8-C901-2345-DEF0-678901BCDEF0">
           <RemoveFolder Id="RemoveHermesDir" On="uninstall" />
           <RegistryValue Root="HKLM" Key="SOFTWARE\TsekNet\Hermes" Name="Cleanup" Value="1" Type="integer" KeyPath="yes" />
         </Component>
