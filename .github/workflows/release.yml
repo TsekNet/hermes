@@ -91,20 +91,7 @@ jobs:
             chmod 644 "$PKG_ROOT/Library/LaunchAgents/com.tseknet.hermes.plist"
             cp ../../build/linux/hermes-motd.sh "$PKG_ROOT/etc/profile.d/hermes-motd.sh"
             chmod 644 "$PKG_ROOT/etc/profile.d/hermes-motd.sh"
-            cat > "$PKG_ROOT/usr/local/bin/hermes-uninstall" << 'UNSCRPT'
-            #!/bin/sh
-            set -e
-            launchctl bootout gui/$(id -u) /Library/LaunchAgents/com.tseknet.hermes.plist 2>/dev/null || true
-            rm -f /usr/local/bin/hermes /usr/local/bin/hermes-uninstall
-            rm -f /Library/LaunchAgents/com.tseknet.hermes.plist
-            rm -f /etc/profile.d/hermes-motd.sh
-            ZPROF=/etc/zprofile
-            if [ -f "$ZPROF" ]; then
-              sed -i '' '/hermes-profile\.d/d' "$ZPROF"
-            fi
-            pkgutil --forget com.tseknet.hermes 2>/dev/null || true
-            echo "Hermes uninstalled."
-            UNSCRPT
+            printf '%s\n' '#!/bin/sh' 'set -e' 'launchctl bootout gui/$(id -u) /Library/LaunchAgents/com.tseknet.hermes.plist 2>/dev/null || true' 'rm -f /usr/local/bin/hermes /usr/local/bin/hermes-uninstall' 'rm -f /Library/LaunchAgents/com.tseknet.hermes.plist' 'rm -f /etc/profile.d/hermes-motd.sh' 'ZPROF=/etc/zprofile' 'if [ -f "$ZPROF" ]; then sed -i "" "/hermes-profile\.d/d" "$ZPROF"; fi' 'pkgutil --forget com.tseknet.hermes 2>/dev/null || true' 'echo "Hermes uninstalled."' > "$PKG_ROOT/usr/local/bin/hermes-uninstall"
             chmod 755 "$PKG_ROOT/usr/local/bin/hermes-uninstall"
             mkdir -p ../../pkgscripts
             printf '%s\n' '#!/bin/sh' 'pkill -f "/usr/local/bin/hermes" 2>/dev/null || true' 'exit 0' > ../../pkgscripts/preinstall
@@ -158,35 +145,10 @@ jobs:
           cp ../build/linux/hermes-motd.sh "${PKG}/etc/profile.d/hermes-motd.sh"
           chmod 644 "${PKG}/usr/lib/systemd/user/hermes.service" "${PKG}/etc/profile.d/hermes.sh" "${PKG}/etc/profile.d/hermes-motd.sh"
           mkdir -p "${PKG}/DEBIAN"
-          cat > "${PKG}/DEBIAN/control" << EOF
-          Package: hermes
-          Version: ${VERSION}
-          Architecture: ${ARCH}
-          Maintainer: Hermes <admin@tseknet.com>
-          Description: Cross-platform notification daemon (per-user gRPC + Wails UI)
-          EOF
-          cat > "${PKG}/DEBIAN/prerm" << 'PRERM'
-          #!/bin/sh
-          set -e
-          pkill -f '/usr/local/bin/hermes' 2>/dev/null || true
-          for uid_dir in /run/user/*; do
-            uid=$(basename "$uid_dir")
-            DBUS_SESSION_BUS_ADDRESS="unix:path=$uid_dir/bus" \
-              sudo -u "#$uid" systemctl --user disable --now hermes.service 2>/dev/null || true
-          done
-          PRERM
+          printf 'Package: hermes\nVersion: %s\nArchitecture: %s\nMaintainer: Hermes <admin@tseknet.com>\nDescription: Cross-platform notification daemon (per-user gRPC + Wails UI)\n' "$VERSION" "$ARCH" > "${PKG}/DEBIAN/control"
+          printf '%s\n' '#!/bin/sh' 'set -e' 'pkill -f /usr/local/bin/hermes 2>/dev/null || true' 'for uid_dir in /run/user/*; do' '  uid=$(basename "$uid_dir")' '  DBUS_SESSION_BUS_ADDRESS="unix:path=$uid_dir/bus" sudo -u "#$uid" systemctl --user disable --now hermes.service 2>/dev/null || true' 'done' > "${PKG}/DEBIAN/prerm"
           chmod 755 "${PKG}/DEBIAN/prerm"
-          cat > "${PKG}/DEBIAN/postrm" << 'POSTRM'
-          #!/bin/sh
-          set -e
-          if [ "$1" = "purge" ] || [ "$1" = "remove" ]; then
-            rm -f /etc/profile.d/hermes.sh /etc/profile.d/hermes-motd.sh
-            rm -f /usr/lib/systemd/user/hermes.service
-            for home_dir in /home/*; do
-              rm -f "$home_dir/.config/systemd/user/hermes.service" 2>/dev/null || true
-            done
-          fi
-          POSTRM
+          printf '%s\n' '#!/bin/sh' 'set -e' 'if [ "$1" = "purge" ] || [ "$1" = "remove" ]; then' '  rm -f /etc/profile.d/hermes.sh /etc/profile.d/hermes-motd.sh' '  rm -f /usr/lib/systemd/user/hermes.service' '  for home_dir in /home/*; do' '    rm -f "$home_dir/.config/systemd/user/hermes.service" 2>/dev/null || true' '  done' 'fi' > "${PKG}/DEBIAN/postrm"
           chmod 755 "${PKG}/DEBIAN/postrm"
           dpkg-deb --root-owner-group -b "${PKG}" "hermes_${VERSION}.deb"
           cp "hermes_${VERSION}.deb" hermes.deb
