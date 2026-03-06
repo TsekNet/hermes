@@ -16,13 +16,23 @@ Platform-specific behavior: webview engines and deployment. See **[Architecture]
 
 ## Deployment
 
-The `hermes serve` daemon runs **per-user** in the desktop session. Run the installer; it handles placement and autostart:
+The `hermes serve` daemon runs **per-user** in the desktop session. Run the installer; it handles placement, autostart, and MOTD. No additional setup.
 
 | Platform | Install | Autostart |
 |----------|---------|-----------|
 | Windows | **hermes.msi** | HKLM Run key at logon. |
 | Linux | `sudo dpkg -i hermes.deb` | systemd user unit + profile.d; starts on next login. |
-| macOS | **hermes.pkg** / **hermes-arm64.pkg** | LaunchAgent in `/Library/LaunchAgents`. |
+| macOS | **hermes.pkg** / **hermes_arm64.pkg** | LaunchAgent in `/Library/LaunchAgents`; profile.d + zprofile snippet via postinstall. |
+
+**Silent / MDM install**
+
+By default the Windows MSI shows the setup wizard; use the parameters below for unattended installs.
+
+| Platform | Silent install |
+|----------|----------------|
+| Windows | `msiexec /i hermes.msi /qn` |
+| Linux | `sudo apt install -y ./hermes.deb` |
+| macOS | `installer -pkg hermes.pkg -target /` — no UI. Use `hermes_arm64.pkg` on ARM. |
 
 See **[Architecture — Deployment](architecture.md#deployment)** for detail.
 

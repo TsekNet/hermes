@@ -164,4 +164,6 @@ jobs:
             dist/hermes_arm64.app.tar.gz
             dist/hermes.deb
             dist/hermes.msi
+            dist/hermes.pkg
+            dist/hermes_arm64.pkg
           generate_release_notes: true

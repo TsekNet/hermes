@@ -29,7 +29,7 @@ Download from [Releases](https://github.com/TsekNet/hermes/releases) and run the
 |----------|---------|
 | Windows | Execute `hermes.msi` |
 | Linux | `sudo dpkg -i hermes.deb` |
-| macOS | Open `hermes.pkg` (Intel) or `hermes-arm64.pkg` (Apple Silicon) |
+| macOS | Open `hermes.pkg` (Intel) or `hermes_arm64.pkg` (Apple Silicon) |
 
 ## Quick start
 
