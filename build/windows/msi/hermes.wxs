@@ -39,10 +39,8 @@
       </Directory>
     </StandardDirectory>
 
-    <SetProperty Id="StopHermes" Before="StopHermes" Sequence="execute"
-      Value="&quot;[SystemFolder]taskkill.exe&quot; /F /IM hermes.exe" />
-    <CustomAction Id="StopHermes"
-      BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" DllEntry="WixQuietExec"
+    <CustomAction Id="StopHermes" Directory="HermesDir"
+      ExeCommand="cmd.exe /c taskkill /F /IM hermes.exe"
       Execute="immediate" Return="ignore" />
 
     <SetProperty Id="InstallMotdHook" Before="InstallMotdHook" Sequence="execute"
