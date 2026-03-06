@@ -16,14 +16,26 @@ Platform-specific behavior: webview engines and deployment. See **[Architecture]
 
 ## Deployment
 
-The `hermes serve` daemon runs **per-user** in the desktop session. Install an autostart entry so it launches at login:
+The `hermes serve` daemon runs **per-user** in the desktop session. Run the installer; it handles placement and autostart:
 
-| Platform | Mechanism | Location |
-|----------|-----------|----------|
-| Windows | Registry Run key | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` |
-| macOS | LaunchAgent | `~/Library/LaunchAgents/com.tseknet.hermes.plist` |
-| Linux | systemd user unit | `~/.config/systemd/user/hermes.service` |
+| Platform | Install | Autostart |
+|----------|---------|-----------|
+| Windows | **hermes.msi** | HKLM Run key at logon. |
+| Linux | `sudo dpkg -i hermes.deb` | systemd user unit + profile.d; starts on next login. |
+| macOS | **hermes.pkg** / **hermes-arm64.pkg** | LaunchAgent in `/Library/LaunchAgents`. |
 
-See **[Architecture — Deployment](architecture.md#deployment)** for copy-pasteable configs.
+See **[Architecture — Deployment](architecture.md#deployment)** for detail.
 
-Deployment tooling (scripts, config management, MDM profiles) drops the binary and the autostart config. The daemon itself requires no elevated privileges.
+---
+
+## SSH-only users
+
+Users who connect via SSH without a desktop session won't see the Wails UI. The installers include a login banner that shows pending notification summaries on shell login:
+
+| Platform | Mechanism |
+|----------|-----------|
+| Linux | `/etc/profile.d/hermes-motd.sh` (installed by .deb) |
+| macOS | `/etc/profile.d/hermes-motd.sh` (installed by .pkg; postinstall ensures zsh sources profile.d) |
+| Windows | Guarded one-liner in `$PSHOME\Profile.ps1` and `$env:ProgramFiles\PowerShell\7\Profile.ps1` (installed by MSI) |
+
+The banner only appears for SSH sessions (detected via `$SSH_CLIENT` / `$SSH_TTY` on Unix, `$env:SSH_CLIENT` / `$env:SSH_CONNECTION` on Windows). It runs `hermes inbox --json` and prints a summary. Silent when there are no pending notifications. Run `hermes inbox` for full details.

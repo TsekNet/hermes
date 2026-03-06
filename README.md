@@ -23,7 +23,13 @@
 
 ## Install
 
-Grab a binary from [Releases](https://github.com/TsekNet/hermes/releases) -- zero runtime dependencies, single Go binary with all the web UI code embedded.
+Download from [Releases](https://github.com/TsekNet/hermes/releases) and run the installer:
+
+| Platform | Install |
+|----------|---------|
+| Windows | Execute `hermes.msi` |
+| Linux | `sudo dpkg -i hermes.deb` |
+| macOS | Open `hermes.pkg` (Intel) or `hermes-arm64.pkg` (Apple Silicon) |
 
 ## Quick start
 

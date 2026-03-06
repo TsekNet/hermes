@@ -59,15 +59,49 @@ jobs:
           fi
           eval wails build $BUILD_FLAGS
 
+      - name: Install WiX (Windows)
+        if: matrix.goos == 'windows'
+        run: dotnet tool install --global wix
+
+      - name: Build MSI (Windows)
+        if: matrix.goos == 'windows'
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          cp build/windows/msi/hermes-motd.ps1 build/bin/
+          cp build/windows/msi/install-motd-hook.ps1 build/bin/
+          cp build/windows/msi/remove-motd-hook.ps1 build/bin/
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          wix build build/windows/msi/hermes.wxs -ext WixToolset.Util.wixext -d Version="$VERSION" -d StagingDir=build/bin -o dist/hermes.msi
+
       - name: Package release artifacts
         shell: bash
         run: |
           mkdir -p dist
           if [ "${{ matrix.goos }}" = "darwin" ]; then
             cd build/bin
-            tar czf ../../dist/hermes_${{ matrix.goarch }}.app.tar.gz hermes.app
+            PKG_ROOT="../../pkgroot"
+            mkdir -p "$PKG_ROOT/usr/local/bin" "$PKG_ROOT/Library/LaunchAgents" "$PKG_ROOT/etc/profile.d"
+            cp hermes.app/Contents/MacOS/hermes "$PKG_ROOT/usr/local/bin/"
+            chmod 755 "$PKG_ROOT/usr/local/bin/hermes"
+            printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' '<plist version="1.0">' '<dict>' '  <key>Label</key><string>com.tseknet.hermes</string>' '  <key>ProgramArguments</key>' '  <array><string>/usr/local/bin/hermes</string><string>serve</string></array>' '  <key>RunAtLoad</key><true/>' '  <key>KeepAlive</key><true/>' '</dict>' '</plist>' > "$PKG_ROOT/Library/LaunchAgents/com.tseknet.hermes.plist"
+            chmod 644 "$PKG_ROOT/Library/LaunchAgents/com.tseknet.hermes.plist"
+            cp ../../build/linux/hermes-motd.sh "$PKG_ROOT/etc/profile.d/hermes-motd.sh"
+            chmod 644 "$PKG_ROOT/etc/profile.d/hermes-motd.sh"
+            mkdir -p ../../pkgscripts
+            printf '%s\n' '#!/bin/sh' 'ZPROF=/etc/zprofile' 'MARKER="# hermes-profile.d"' 'SNIPPET="if [ -d /etc/profile.d ]; then for f in /etc/profile.d/*.sh; do [ -r \"\$f\" ] && . \"\$f\"; done; fi $MARKER"' 'if [ ! -f "$ZPROF" ] || ! grep -q "$MARKER" "$ZPROF"; then' '  printf "%s\\n" "$SNIPPET" >> "$ZPROF"' 'fi' 'exit 0' > ../../pkgscripts/postinstall
+            chmod 755 ../../pkgscripts/postinstall
+            if [ "${{ matrix.goarch }}" = "amd64" ]; then
+              pkgbuild --identifier com.tseknet.hermes --root "$PKG_ROOT" --install-location / --scripts ../../pkgscripts ../../dist/hermes.pkg
+              tar czf ../../dist/hermes.app.tar.gz hermes.app
+            else
+              pkgbuild --identifier com.tseknet.hermes --root "$PKG_ROOT" --install-location / --scripts ../../pkgscripts ../../dist/hermes_${{ matrix.goarch }}.pkg
+              tar czf ../../dist/hermes_${{ matrix.goarch }}.app.tar.gz hermes.app
+            fi
+            rm -rf "$PKG_ROOT" ../../pkgscripts
           elif [ "${{ matrix.goos }}" = "windows" ]; then
-            cp build/bin/hermes.exe dist/hermes.exe
+            :  # hermes.msi already in dist from Build MSI step
           elif [ "${{ matrix.goos }}" = "linux" ]; then
             cp build/bin/hermes dist/hermes
             chmod +x dist/hermes
@@ -90,6 +124,31 @@ jobs:
         with:
           path: dist/
           merge-multiple: true
+
+      - name: Build .deb package
+        working-directory: dist
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          ARCH=amd64
+          PKG=hermes_${VERSION}
+          mkdir -p "${PKG}/usr/local/bin" "${PKG}/usr/lib/systemd/user" "${PKG}/etc/profile.d"
+          cp -f hermes "${PKG}/usr/local/bin/"
+          chmod 755 "${PKG}/usr/local/bin/hermes"
+          printf '%s\n' '[Unit]' 'Description=Hermes notification service' '' '[Service]' 'ExecStart=/usr/local/bin/hermes serve' 'Restart=on-failure' '' '[Install]' 'WantedBy=default.target' > "${PKG}/usr/lib/systemd/user/hermes.service"
+          printf '%s\n' 'if command -v systemctl >/dev/null 2>&1 && [[ -n "$HOME" ]]; then' '  mkdir -p "$HOME/.config/systemd/user"' '  [[ -f /usr/lib/systemd/user/hermes.service && ! -f "$HOME/.config/systemd/user/hermes.service" ]] && cp /usr/lib/systemd/user/hermes.service "$HOME/.config/systemd/user/"' '  systemctl --user enable --now hermes.service 2>/dev/null || true' 'fi' > "${PKG}/etc/profile.d/hermes.sh"
+          cp ../build/linux/hermes-motd.sh "${PKG}/etc/profile.d/hermes-motd.sh"
+          chmod 644 "${PKG}/usr/lib/systemd/user/hermes.service" "${PKG}/etc/profile.d/hermes.sh" "${PKG}/etc/profile.d/hermes-motd.sh"
+          mkdir -p "${PKG}/DEBIAN"
+          cat > "${PKG}/DEBIAN/control" << EOF
+          Package: hermes
+          Version: ${VERSION}
+          Architecture: ${ARCH}
+          Maintainer: Hermes <admin@tseknet.com>
+          Description: Cross-platform notification daemon (per-user gRPC + Wails UI)
+          EOF
+          dpkg-deb --root-owner-group -b "${PKG}" "hermes_${VERSION}.deb"
+          cp "hermes_${VERSION}.deb" hermes.deb
+          rm -rf "${PKG}"
 
       - name: Generate checksums
         working-directory: dist

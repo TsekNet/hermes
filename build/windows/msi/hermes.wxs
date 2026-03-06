@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WiX v4. Build: wix build build/windows/msi/hermes.wxs -d Version=0.0.5 -d StagingDir=build/bin -o dist/hermes.msi -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="Hermes"
+    Manufacturer="TsekNet"
+    Version="$(var.Version)"
+    UpgradeCode="B7E8A1C2-9D4E-4F5A-8B3C-1E2D3F4A5B6C"
+    Scope="perMachine">
+
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of Hermes is already installed."
+      AllowSameVersionUpgrades="yes" />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="HermesDir" Name="Hermes">
+        <Component Id="HermesExe" Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890">
+          <File Id="HermesExeFile" Source="$(var.StagingDir)/hermes.exe" KeyPath="yes" />
+        </Component>
+        <Component Id="HermesMotdScript" Guid="F1A2B3C4-D5E6-7890-ABCD-EF1234567891">
+          <File Id="HermesMotdPs1" Source="$(var.StagingDir)/hermes-motd.ps1" KeyPath="yes" />
+        </Component>
+        <Component Id="HermesMotdInstallHook" Guid="A2B3C4D5-E6F7-8901-ABCD-EF2345678902">
+          <File Id="InstallMotdHookPs1" Source="$(var.StagingDir)/install-motd-hook.ps1" KeyPath="yes" />
+        </Component>
+        <Component Id="HermesMotdRemoveHook" Guid="B3C4D5E6-F789-0123-ABCD-EF3456789013">
+          <File Id="RemoveMotdHookPs1" Source="$(var.StagingDir)/remove-motd-hook.ps1" KeyPath="yes" />
+        </Component>
+        <Component Id="HermesAutostart" Guid="D4E5F6A7-B890-1234-CDEF-567890ABCDEF">
+          <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run" Name="Hermes" Value="&quot;[HermesDir]hermes.exe&quot; serve" Type="string" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <SetProperty Id="InstallMotdHook" Before="InstallMotdHook" Sequence="execute"
+      Value="&quot;[SystemFolder]WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -ExecutionPolicy Bypass -File &quot;[HermesDir]install-motd-hook.ps1&quot;" />
+    <CustomAction Id="InstallMotdHook"
+      BinaryRef="Wix4UtilCA_X86" DllEntry="WixQuietExec"
+      Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <SetProperty Id="RemoveMotdHook" Before="RemoveMotdHook" Sequence="execute"
+      Value="&quot;[SystemFolder]WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -ExecutionPolicy Bypass -File &quot;[HermesDir]remove-motd-hook.ps1&quot;" />
+    <CustomAction Id="RemoveMotdHook"
+      BinaryRef="Wix4UtilCA_X86" DllEntry="WixQuietExec"
+      Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="InstallMotdHook" Before="InstallFinalize">NOT Installed OR UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="RemoveMotdHook" Before="RemoveFiles">REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+    </InstallExecuteSequence>
+
+    <Feature Id="ProductFeature" Title="Hermes" Level="1">
+      <ComponentRef Id="HermesExe" />
+      <ComponentRef Id="HermesMotdScript" />
+      <ComponentRef Id="HermesMotdInstallHook" />
+      <ComponentRef Id="HermesMotdRemoveHook" />
+      <ComponentRef Id="HermesAutostart" />
+    </Feature>
+  </Package>
+</Wix>
