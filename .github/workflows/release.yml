@@ -75,7 +75,7 @@ jobs:
           cp build/windows/msi/install-motd-hook.ps1 build/bin/
           cp build/windows/msi/remove-motd-hook.ps1 build/bin/
           export PATH="$PATH:$HOME/.dotnet/tools"
-          wix build build/windows/msi/hermes.wxs -ext WixToolset.Util.wixext -d Version="$VERSION" -d StagingDir=build/bin -o dist/hermes.msi
+          wix build build/windows/msi/hermes.wxs -arch x64 -ext WixToolset.Util.wixext -d Version="$VERSION" -d StagingDir=build/bin -o dist/hermes.msi
 
       - name: Package release artifacts
         shell: bash
