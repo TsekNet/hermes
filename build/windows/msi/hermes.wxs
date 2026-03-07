@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- WiX v4. Build: wix build build/windows/msi/hermes.wxs -d Version=0.0.5 -d StagingDir=build/bin -o dist/hermes.msi -->
+<!-- Build: wix build build/windows/msi/hermes.wxs -arch x64 -d Version=0.0.5 -d StagingDir=build/bin -o dist/hermes.msi -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package
     Name="Hermes"
@@ -39,8 +39,10 @@
       </Directory>
     </StandardDirectory>
 
-    <CustomAction Id="StopHermes" Directory="SystemFolder"
-      ExeCommand="cmd.exe /c taskkill /F /IM hermes.exe"
+    <SetProperty Id="StopHermes" Before="StopHermes" Sequence="execute"
+      Value="[System64Folder]cmd.exe" />
+    <CustomAction Id="StopHermes" Property="StopHermes"
+      ExeCommand="/c taskkill /F /IM hermes.exe"
       Execute="immediate" Return="ignore" />
 
     <SetProperty Id="InstallMotdHook" Before="InstallMotdHook" Sequence="execute"
