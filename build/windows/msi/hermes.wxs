@@ -6,7 +6,8 @@
     Manufacturer="TsekNet"
     Version="$(var.Version)"
     UpgradeCode="B7E8A1C2-9D4E-4F5A-8B3C-1E2D3F4A5B6C"
-    Scope="perMachine">
+    Scope="perMachine"
+    Platform="x64">
 
     <MajorUpgrade AllowDowngrades="yes" />
 
