@@ -10,6 +10,7 @@ import (
 func TestNew(t *testing.T) {
 	t.Parallel()
 	cfg := &config.NotificationConfig{Heading: "Test", Message: "Body"}
+	cfg.ApplyDefaults()
 	a := New(cfg)
 	if a.cfg != cfg {
 		t.Error("cfg not set")
@@ -25,6 +26,7 @@ func TestNew(t *testing.T) {
 func TestNewWithGRPC(t *testing.T) {
 	t.Parallel()
 	cfg := &config.NotificationConfig{Heading: "Test", Message: "Body"}
+	cfg.ApplyDefaults()
 	a := NewWithGRPC(cfg, nil, "notif-1", false)
 
 	if a.notificationID != "notif-1" {

@@ -10,7 +10,7 @@ The notification UI is a web page, not a native dialog. HTML, CSS, and JavaScrip
 |---------|------|
 | [Wails v2](https://wails.io) | Frameless webview with Go<->JS bindings |
 | [Cobra](https://github.com/spf13/cobra) | CLI framework (flags, subcommands, help) |
-| [google/deck](https://github.com/google/deck) | Structured logging (stderr, Windows Event Log, syslog) |
+| [google/deck](https://github.com/google/deck) | Leveled logging (stderr, Windows Event Log, syslog) |
 | [gRPC](https://grpc.io) | Service<->CLI and service<->UI communication |
 | [fsnotify](https://github.com/fsnotify/fsnotify) | Cross-platform filesystem event monitoring |
 
@@ -355,16 +355,15 @@ Positioning is handled entirely from Go using Wails runtime APIs. This avoids DP
 The algorithm uses `WindowCenter()` as a reference point, then derives the notification corner:
 
 1. `WindowCenter()` — Wails handles DPI scaling, work area, and multi-monitor
-2. `WindowGetPosition()` → centered position `(cx, cy)`
-3. `WindowSetPosition(0, 0)` → probe the coordinate origin `(ox, oy)`
-4. Right-aligned: `x = 2*(cx-ox) - margin`
-5. Bottom-aligned (Windows) or top-aligned (macOS/Linux): `y = 2*(cy-oy) - margin`
+2. `WindowGetPosition()` → centered position `(cx, cy)`, `WindowGetSize()` → `(w, h)`
+3. Derive work-area dimensions: `waW = 2*cx + w`, `waH = 2*cy + h`
+4. Right-aligned: `x = waW - w - margin`
+5. Bottom-aligned (Windows): `y = waH - h - margin`, top-aligned (macOS/Linux): `y = margin`
 
 | Platform | Corner | Why |
 |----------|--------|-----|
 | Windows | Bottom-right | Matches Action Center / native toasts |
-| macOS | Top-right | Cocoa y-axis: origin at bottom-left, `y = oy + margin` places window just below menu bar |
-| Linux | Top-right | GTK y-down: `y = oy + margin` from top edge |
+| macOS/Linux | Top-right | Wails normalizes native coordinate systems, `y = margin` from top edge |
 
 ---
 

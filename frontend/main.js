@@ -354,7 +354,7 @@
     if (!document.hasFocus()) return;
     if (e.keyCode === 27) respond(escValue);
     if (e.keyCode === 13) {
-      var primary = document.querySelector(".btn-primary");
+      var primary = document.querySelector(".btn-primary[data-value]");
       if (primary) respond(primary.getAttribute("data-value"));
     }
     if (carouselTotal > 1) {

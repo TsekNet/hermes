@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TsekNet/hermes/internal/app"
 	"github.com/spf13/cobra"
 )
 
@@ -74,11 +73,4 @@ func sanitize(s string) string {
 		}
 	}
 	return b.String()
-}
-
-// inboxEntryHeading extracts the heading from an InboxEntry.
-// This avoids importing the full app package just for the field name.
-func init() {
-	// Verify at compile time that app.InboxEntry has a Heading field.
-	var _ = app.InboxEntry{}.Heading
 }

@@ -1,11 +1,15 @@
 package cmd
 
-import "os/exec"
+import (
+	"os/exec"
+	"syscall"
+)
 
 // launchSubprocess starts a detached child process with the given binary
-// and arguments. The process inherits the current user's session (because
-// the service daemon already runs per-user).
+// and arguments. Setsid puts the child in its own session so parent signals
+// (e.g. SIGINT on daemon stop) don't kill in-flight UI subprocesses.
 func launchSubprocess(binary string, args []string) error {
 	cmd := exec.Command(binary, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	return cmd.Start()
 }

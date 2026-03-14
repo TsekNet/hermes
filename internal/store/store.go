@@ -296,7 +296,7 @@ func EnqueueOffline(dbPath string, cfg *config.NotificationConfig, ttl time.Dura
 	now := time.Now()
 	priority := cfg.Priority
 	if priority == 0 {
-		priority = 5
+		priority = config.DefaultPriority
 	}
 	return s.Enqueue(&QueueRecord{
 		ID:        id,
