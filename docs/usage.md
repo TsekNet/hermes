@@ -184,7 +184,7 @@ Embed images (documentation slides, screenshots, diagrams) in the notification. 
 }
 ```
 
-Images must be `https://` URLs or `data:image/` URIs (no SVG). Maximum 5 per notification.
+Images must be `https://` URLs or `data:image/` URIs (no SVG). Maximum 5 per notification. Recommended dimensions: **380x220px** (matches the carousel track). Images are scaled with `object-fit: contain`, so larger images work but may have letterboxing.
 
 ### Filesystem watch
 

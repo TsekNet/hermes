@@ -1,6 +1,6 @@
 # Notification Examples
 
-Captured from [`testdata/`](../../testdata) configs via [`screenshot.ps1`](screenshot.ps1).
+Captured from [`testdata/`](../) configs via [`screenshot.ps1`](screenshot.ps1).
 
 ---
 

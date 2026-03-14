@@ -8,9 +8,9 @@
   "defer_deadline": "7d",
   "max_defers": 5,
   "images": [
-    "https://placehold.co/600x400/1a1a2e/D4A843?text=Update+Overview",
-    "https://placehold.co/600x400/1a1a2e/D4A843?text=Security+Fixes",
-    "https://placehold.co/600x400/1a1a2e/D4A843?text=Timeline"
+    "https://placehold.co/380x220/1a1a2e/D4A843?text=Update+Overview",
+    "https://placehold.co/380x220/1a1a2e/D4A843?text=Security+Fixes",
+    "https://placehold.co/380x220/1a1a2e/D4A843?text=Timeline"
   ],
   "buttons": [
     {

@@ -107,7 +107,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 
 ## Documentation
 
-- [Examples](assets/examples/) -- screenshots of every notification type
+- [Examples](testdata/examples/) -- screenshots of every notification type
 - [Usage](docs/usage.md) -- JSON/YAML config, subcommands, flags, exit codes
 - [Architecture](docs/architecture.md) -- service daemon, gRPC, deployment, packages
 - [Broadcast](docs/broadcast.md) -- SYSTEM/root to user delivery
