@@ -82,7 +82,7 @@ func (c *Client) GetUIConfig(ctx context.Context, notificationID string) (*confi
 	if err != nil {
 		return nil, false, fmt.Errorf("get ui config rpc: %w", err)
 	}
-	cfg, err := config.LoadJSON(resp.ConfigJson)
+	cfg, err := config.Load(resp.ConfigJson)
 	if err != nil {
 		return nil, false, fmt.Errorf("parse config from service: %w", err)
 	}
@@ -175,14 +175,6 @@ func (c *Client) ListHistory(ctx context.Context) ([]HistoryEntry, error) {
 		}
 	}
 	return out, nil
-}
-
-// Ping attempts a quick List RPC to check if the service is running.
-func (c *Client) Ping(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	_, err := c.svc.List(ctx, &pb.ListRequest{})
-	return err
 }
 
 // Shutdown requests a graceful daemon shutdown via gRPC.

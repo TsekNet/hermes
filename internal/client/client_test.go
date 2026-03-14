@@ -51,8 +51,8 @@ func TestDialAndPing(t *testing.T) {
 	}
 	defer c.Close()
 
-	if err := c.Ping(context.Background()); err != nil {
-		t.Errorf("Ping: %v", err)
+	if _, err := c.List(context.Background()); err != nil {
+		t.Errorf("List: %v", err)
 	}
 }
 

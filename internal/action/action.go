@@ -65,11 +65,6 @@ func AllowedOn(value, goos string) bool {
 	return false
 }
 
-// Classify returns the Kind of a value on the current OS.
-func Classify(value string) Kind {
-	return ClassifyOn(value, runtime.GOOS)
-}
-
 // ClassifyOn returns the Kind of a value on the given OS.
 func ClassifyOn(value, goos string) Kind {
 	lower := strings.ToLower(value)

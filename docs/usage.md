@@ -66,7 +66,7 @@ hermes accepts a single JSON or YAML config with these fields:
 | `buttons` | array | no | `[]` | Button definitions (see below) |
 | `timeout` | int | no | `300` | Seconds until auto-action |
 | `timeout_value` | string | no | `""` | Value returned on timeout |
-| `esc_value` | string | no | `""` | Value returned on ESC (defaults to `timeout_value`) |
+| `esc_value` | string | no | `""` | Value returned on ESC (defaults to `timeout_value` when set, otherwise empty) |
 | `title` | string | no | `IT Department` | Small uppercase label at the top |
 | `accent_color` | string | no | `#D4A843` | Theme accent color (hex) |
 | `help_url` | string | no | `""` | "Need help?" link URL |
@@ -363,6 +363,7 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `hermes install` | Configure MOTD hook and launch daemon in active user sessions (when elevated). Called by package postinstall. |
 | `hermes uninstall` | Remove MOTD hook. Called by package removal scripts. |
 | `hermes stop` | Graceful daemon shutdown (gRPC then fallback kill) |
+| `hermes motd` | Print pending notification summary for SSH login banners (called by profile.d scripts) |
 | `hermes demo` | Show a demo notification |
 | `hermes version` | Print version, build date, Go, and OS info |
 
@@ -375,8 +376,8 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `--config <path or json>` | root | config file or inline JSON/YAML — routes to service |
 | `--local` | root | Render locally in current session (skip service) |
 | `--locale <code>` | root | Override locale for localized notifications (e.g. `ja`, `de`) |
-| `--port <int>` | serve, notify, list, cancel | gRPC port (default: 4770) |
-| `--db <path>` | serve, inbox | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
+| `--port <int>` | serve, notify, list, cancel, stop, inbox | gRPC port (default: 4770) |
+| `--db <path>` | serve, inbox, motd | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
 | `--json` | inbox | Print history as JSON instead of opening the UI |
 | `--help` | all | Print help |
 

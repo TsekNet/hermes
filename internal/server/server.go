@@ -60,12 +60,13 @@ func (s *Server) Stop() {
 // --- RPC implementations ---
 
 func (s *Server) Notify(ctx context.Context, req *pb.NotifyRequest) (*pb.NotifyResponse, error) {
-	cfg, err := config.LoadJSON(req.ConfigJson)
+	cfg, err := config.Load(req.ConfigJson)
 	if err != nil {
 		return &pb.NotifyResponse{ExitCode: 1, Error: err.Error()}, nil
 	}
 	cfg.ApplyDefaults()
 	cfg.ApplyLocale(config.DetectLocale())
+	cfg.SanitizeText()
 	if err := cfg.Validate(); err != nil {
 		return &pb.NotifyResponse{ExitCode: 1, Error: err.Error()}, nil
 	}

@@ -128,5 +128,8 @@ func writeTempConfig(cfg *config.NotificationConfig) (string, error) {
 		return "", fmt.Errorf("write temp config: %w", err)
 	}
 	f.Close()
+	// Make readable by all users so child processes in other sessions
+	// (launched via CreateProcessAsUser / setuid) can read the config.
+	os.Chmod(f.Name(), 0644)
 	return f.Name(), nil
 }

@@ -902,6 +902,7 @@ func TestValidate_HTMLEscaping(t *testing.T) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	cfg.SanitizeText()
 	if strings.Contains(cfg.Heading, "<script>") {
 		t.Error("heading not escaped")
 	}

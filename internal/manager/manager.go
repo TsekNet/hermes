@@ -360,12 +360,14 @@ func (m *Manager) handleDeferLocked(n *Notification, value string) bool {
 	}
 	n.deferTimer = time.AfterFunc(wait, func() {
 		m.mu.Lock()
-		if n.State == StateDeferred {
-			n.State = StatePending
-			// Apply escalation: mutate config based on cumulative defer count.
-			n.Config.ApplyEscalation(n.DeferCount)
-			deck.Infof("manager: re-showing notification %s after deferral (defers=%d)", n.ID, n.DeferCount)
+		if n.State != StateDeferred {
+			m.mu.Unlock()
+			return
 		}
+		n.State = StatePending
+		// Apply escalation: mutate config based on cumulative defer count.
+		n.Config.ApplyEscalation(n.DeferCount)
+		deck.Infof("manager: re-showing notification %s after deferral (defers=%d)", n.ID, n.DeferCount)
 		m.mu.Unlock()
 		m.launchWithChecks(n)
 	})

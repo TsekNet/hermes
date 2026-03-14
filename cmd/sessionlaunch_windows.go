@@ -206,21 +206,27 @@ func quoteArg(s string) string {
 	if s == "" || strings.ContainsAny(s, ` "\`) {
 		var b strings.Builder
 		b.WriteByte('"')
-		nbs := 0
+		backslashes := 0
 		for i := 0; i < len(s); i++ {
 			switch s[i] {
 			case '\\':
-				nbs++
+				backslashes++
 			case '"':
-				b.WriteString(strings.Repeat(`\`, nbs+1))
-				nbs = 0
+				// Double backslashes before a quote, then escape the quote.
+				b.WriteString(strings.Repeat(`\`, backslashes*2+1))
+				backslashes = 0
 				b.WriteByte('"')
 			default:
-				nbs = 0
+				// Flush accumulated backslashes as-is (not before a quote).
+				if backslashes > 0 {
+					b.WriteString(strings.Repeat(`\`, backslashes))
+					backslashes = 0
+				}
 				b.WriteByte(s[i])
 			}
 		}
-		b.WriteString(strings.Repeat(`\`, nbs))
+		// Double trailing backslashes (they precede the closing quote).
+		b.WriteString(strings.Repeat(`\`, backslashes*2))
 		b.WriteByte('"')
 		return b.String()
 	}

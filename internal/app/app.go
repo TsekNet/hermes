@@ -39,19 +39,15 @@ type App struct {
 }
 
 // New creates the App with the parsed config (local mode).
+// Caller must call cfg.ApplyDefaults() first (sets Platform if empty).
 func New(cfg *config.NotificationConfig) *App {
-	if cfg.Platform == "" {
-		cfg.Platform = goRuntime.GOOS
-	}
 	return &App{cfg: cfg, deferAllowed: true}
 }
 
 // NewWithGRPC creates the App in service mode. The gRPC client is used to
 // report the user's choice back to the service daemon.
+// Caller must call cfg.ApplyDefaults() first (sets Platform if empty).
 func NewWithGRPC(cfg *config.NotificationConfig, gc grpcReporter, notifID string, deferAllowed bool) *App {
-	if cfg.Platform == "" {
-		cfg.Platform = goRuntime.GOOS
-	}
 	return &App{
 		cfg:            cfg,
 		grpcClient:     gc,

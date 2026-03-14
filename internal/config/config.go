@@ -7,6 +7,7 @@ import (
 	"html"
 	"net/url"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -211,6 +212,9 @@ type DropdownOption struct {
 // MaxConfigSize is the maximum allowed config payload (64 KB).
 const MaxConfigSize = 64 * 1024
 
+// DefaultPriority is applied when the config omits priority (zero value).
+const DefaultPriority = 5
+
 // Load parses raw JSON or YAML bytes into a NotificationConfig.
 func Load(data []byte) (*NotificationConfig, error) {
 	data = bytes.TrimSpace(data)
@@ -249,7 +253,10 @@ func (c *NotificationConfig) ApplyDefaults() {
 		c.DND = DNDRespect
 	}
 	if c.Priority == 0 {
-		c.Priority = 5
+		c.Priority = DefaultPriority
+	}
+	if c.Platform == "" {
+		c.Platform = runtime.GOOS
 	}
 	for i := range c.Buttons {
 		if c.Buttons[i].Style == "" {
@@ -304,8 +311,8 @@ func matchLocale(m map[string]string, locale string) string {
 }
 
 // ApplyEscalation mutates the config based on the current defer count.
-// The highest matching threshold wins. This is called by the manager
-// before re-showing a deferred notification.
+// The highest matching threshold wins regardless of array order.
+// Called by the manager before re-showing a deferred notification.
 func (c *NotificationConfig) ApplyEscalation(deferCount int) {
 	if len(c.Escalation) == 0 || deferCount == 0 {
 		return
@@ -313,7 +320,9 @@ func (c *NotificationConfig) ApplyEscalation(deferCount int) {
 	var active *EscalationStep
 	for i := range c.Escalation {
 		if deferCount >= c.Escalation[i].AfterDefers {
-			active = &c.Escalation[i]
+			if active == nil || c.Escalation[i].AfterDefers > active.AfterDefers {
+				active = &c.Escalation[i]
+			}
 		}
 	}
 	if active == nil {
@@ -330,14 +339,33 @@ func (c *NotificationConfig) ApplyEscalation(deferCount int) {
 	}
 }
 
-// Validate checks that required fields are present and values are safe.
-// All user-visible text fields are HTML-escaped as defense-in-depth
-// (the frontend uses textContent, but this guards against regressions).
-func (c *NotificationConfig) Validate() error {
-	c.Heading = html.EscapeString(c.Heading)
-	c.Message = html.EscapeString(c.Message)
-	c.Title = html.EscapeString(c.Title)
+// SanitizeText HTML-escapes all user-visible text fields as defense-in-depth.
+// The frontend uses textContent, but this guards against regressions.
+// Call once before first display. Safe to call multiple times (idempotent).
+func (c *NotificationConfig) SanitizeText() {
+	c.Heading = safeEscape(c.Heading)
+	c.Message = safeEscape(c.Message)
+	c.Title = safeEscape(c.Title)
+	for i := range c.Buttons {
+		c.Buttons[i].Label = safeEscape(c.Buttons[i].Label)
+		for j := range c.Buttons[i].Dropdown {
+			c.Buttons[i].Dropdown[j].Label = safeEscape(c.Buttons[i].Dropdown[j].Label)
+		}
+	}
+}
 
+// safeEscape applies html.EscapeString only if the string does not already
+// contain HTML entities, preventing double-escaping on repeated calls.
+func safeEscape(s string) string {
+	if strings.Contains(s, "&amp;") || strings.Contains(s, "&lt;") || strings.Contains(s, "&gt;") || strings.Contains(s, "&#") {
+		return s
+	}
+	return html.EscapeString(s)
+}
+
+// Validate checks that required fields are present and values are safe.
+// Does NOT mutate text fields: call SanitizeText separately before display.
+func (c *NotificationConfig) Validate() error {
 	var errs []string
 	if strings.TrimSpace(c.Heading) == "" {
 		errs = append(errs, `"heading" is required`)
@@ -346,12 +374,10 @@ func (c *NotificationConfig) Validate() error {
 		errs = append(errs, `"message" is required`)
 	}
 	for i := range c.Buttons {
-		c.Buttons[i].Label = html.EscapeString(c.Buttons[i].Label)
 		if strings.ContainsAny(c.Buttons[i].Value, "\n\r") {
 			errs = append(errs, "button values must not contain newlines")
 		}
 		for j := range c.Buttons[i].Dropdown {
-			c.Buttons[i].Dropdown[j].Label = html.EscapeString(c.Buttons[i].Dropdown[j].Label)
 			if strings.ContainsAny(c.Buttons[i].Dropdown[j].Value, "\n\r") {
 				errs = append(errs, "dropdown values must not contain newlines")
 			}
@@ -431,6 +457,9 @@ func (c *NotificationConfig) Validate() error {
 // deferRe matches "defer_Xh", "defer_Xd", "defer_Xm", "defer_Xs" where X is an integer.
 var deferRe = regexp.MustCompile(`^defer_(\d+)([hdms])$`)
 
+// dayRe matches "Nd" shorthand for day durations (used by ParseDeadline).
+var dayRe = regexp.MustCompile(`^(\d+)d$`)
+
 // ParseDeferValue extracts the duration from a defer response value like
 // "defer_4h", "defer_1d", "defer_30m", "defer_30s". Returns 0 if the value is not a
 // recognized defer pattern (e.g. plain "defer").
@@ -478,7 +507,7 @@ func ParseDeadline(s string) time.Duration {
 		return d
 	}
 	// Handle "Nd" shorthand for days.
-	m := regexp.MustCompile(`^(\d+)d$`).FindStringSubmatch(s)
+	m := dayRe.FindStringSubmatch(s)
 	if m != nil {
 		n, _ := strconv.Atoi(m[1])
 		// Check for overflow

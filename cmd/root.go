@@ -300,7 +300,7 @@ func resolveConfig(configFlag string, args []string) (*config.NotificationConfig
 		if trimmed == "" {
 			return nil, nil
 		}
-		return config.LoadJSON([]byte(trimmed))
+		return config.Load([]byte(trimmed))
 	}
 	return nil, nil
 }
@@ -313,12 +313,16 @@ func loadFromArg(arg string) (*config.NotificationConfig, error) {
 			return nil, fmt.Errorf("read %s: %w", arg, err)
 		}
 		deck.Infof("loaded config from file: %s", arg)
-		return config.LoadJSON(data)
+		return config.Load(data)
 	}
 
 	trimmed := strings.TrimSpace(arg)
-	if strings.HasPrefix(trimmed, "{") {
-		return config.LoadJSON([]byte(trimmed))
+	if strings.HasPrefix(trimmed, "{") || strings.Contains(trimmed, ":") {
+		cfg, err := config.Load([]byte(trimmed))
+		if err == nil {
+			return cfg, nil
+		}
+		return nil, fmt.Errorf("not a file or valid config: %s", arg)
 	}
 
 	return nil, fmt.Errorf("not a file or valid config: %s", arg)
@@ -339,7 +343,15 @@ func waitForDND(cfg *config.NotificationConfig) error {
 		}
 		return nil
 	default: // "respect"
+		const maxDNDWait = 24 * time.Hour
+		deadline := time.Now().Add(maxDNDWait)
 		for dnd.Active() {
+			if time.Now().After(deadline) {
+				deck.Warningf("notification: dnd=respect, max wait (%s) exceeded heading=%q", maxDNDWait, cfg.Heading)
+				fmt.Print("dnd_timeout")
+				os.Stdout.Sync()
+				os.Exit(int(exitcodes.Timeout))
+			}
 			deck.Infof("notification: dnd=respect, waiting 60s heading=%q", cfg.Heading)
 			time.Sleep(60 * time.Second)
 		}
@@ -406,7 +418,7 @@ func webview2DataPath() string {
 	return p
 }
 
-// prepareConfig applies defaults and locale resolution to a config.
+// prepareConfig applies defaults, locale resolution, and HTML escaping to a config.
 func prepareConfig(cfg *config.NotificationConfig) {
 	cfg.ApplyDefaults()
 	locale := flagLocale
@@ -414,6 +426,7 @@ func prepareConfig(cfg *config.NotificationConfig) {
 		locale = config.DetectLocale()
 	}
 	cfg.ApplyLocale(locale)
+	cfg.SanitizeText()
 }
 
 // respond prints the value to stdout and exits with the appropriate code.
