@@ -59,3 +59,47 @@ foreach ($config in $CONFIGS) {
 }
 
 Write-Host "Done: $total notifications shown." -ForegroundColor Green
+
+# --- System tray icon tests ---
+Write-Host ''
+Write-Host '=== System Tray Icon Tests ===' -ForegroundColor Yellow
+Write-Host ''
+
+Write-Host '[tray 1/4] hermes serve (tray auto-detect)' -ForegroundColor Cyan
+Write-Host '  Starting service with tray icon...'
+Write-Host '  Expected: hermes icon appears in Windows notification area (system tray).'
+Write-Host '  Verify: right-click icon shows menu with Open Inbox, Pending: 0, Quit Hermes.'
+Write-Host '  Press Ctrl+C to stop, then press Enter to continue.'
+$job = Start-Job { & $using:HERMES serve 2>&1 }
+$null = Read-Host
+Stop-Job $job -ErrorAction SilentlyContinue
+Remove-Job $job -ErrorAction SilentlyContinue
+Write-Host ''
+
+Write-Host '[tray 2/4] hermes serve --no-tray' -ForegroundColor Cyan
+Write-Host '  Starting service without tray icon...'
+Write-Host '  Expected: no tray icon, service runs headless.'
+Write-Host '  Check stderr for "tray disabled" log message.'
+Write-Host '  Press Ctrl+C to stop, then press Enter to continue.'
+$job = Start-Job { & $using:HERMES serve --no-tray 2>&1 }
+$null = Read-Host
+Stop-Job $job -ErrorAction SilentlyContinue
+Remove-Job $job -ErrorAction SilentlyContinue
+Write-Host ''
+
+Write-Host '[tray 3/4] Tray pending count' -ForegroundColor Cyan
+Write-Host '  Start "hermes serve" in another terminal, then run:'
+Write-Host '    hermes notify ''{"heading":"Test","message":"Check tray count."}'''
+Write-Host '  Expected: tray tooltip updates to "1 pending notification".'
+Write-Host '  Dismiss the notification, tooltip should return to "no pending".'
+Write-Host '  Press Enter when done.'
+$null = Read-Host
+
+Write-Host '[tray 4/4] Tray "Open Inbox" menu item' -ForegroundColor Cyan
+Write-Host '  With "hermes serve" running, right-click the tray icon.'
+Write-Host '  Click "Open Inbox".'
+Write-Host '  Expected: inbox window opens showing notification history.'
+Write-Host '  Press Enter when done.'
+$null = Read-Host
+
+Write-Host 'Tray tests complete.' -ForegroundColor Green

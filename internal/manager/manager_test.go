@@ -546,6 +546,39 @@ func TestSubmit_DependsOn_CircularIgnored(t *testing.T) {
 	}
 }
 
+func TestActiveCount(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		submit    int
+		cancel    int
+		wantCount int
+	}{
+		{"empty", 0, 0, 0},
+		{"three active", 3, 0, 3},
+		{"submit then cancel one", 3, 1, 2},
+		{"cancel all", 2, 2, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mgr := New(nil, nil)
+			var ids []string
+			for i := 0; i < tt.submit; i++ {
+				id, _ := mgr.Submit(testConfig("ActiveCount"))
+				ids = append(ids, id)
+			}
+			for i := 0; i < tt.cancel && i < len(ids); i++ {
+				mgr.Cancel(ids[i])
+			}
+			if got := mgr.ActiveCount(); got != tt.wantCount {
+				t.Errorf("ActiveCount() = %d, want %d", got, tt.wantCount)
+			}
+		})
+	}
+}
+
 func TestExitCodes(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

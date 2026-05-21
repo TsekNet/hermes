@@ -41,6 +41,19 @@ wails build -platform windows/amd64
 wails build -platform darwin/universal
 ```
 
+## System tray tests
+
+Each platform script includes interactive tray icon tests after the notification sequence. These test:
+
+| Test | What to verify |
+|------|----------------|
+| `hermes serve` (auto-detect) | Tray icon appears, menu has Open Inbox, Pending: 0, Quit Hermes |
+| `hermes serve --no-tray` | No tray icon, service runs headless, log says "tray disabled" |
+| Pending count | Submit a notification, tooltip updates to "1 pending notification" |
+| Open Inbox | Click menu item, inbox window opens |
+
+**Linux note:** GNOME requires the `gnome-shell-extension-appindicator` extension for tray icons. Ubuntu installs it by default; Fedora/RHEL do not. KDE, XFCE, MATE, Cinnamon work without extra setup. On unsupported DEs, the tray auto-disables gracefully.
+
 ## Screenshots
 
 See [examples/](examples/) for captured screenshots of every notification type.

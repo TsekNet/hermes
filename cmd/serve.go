@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -14,14 +15,16 @@ import (
 	"github.com/TsekNet/hermes/internal/ratelimit"
 	"github.com/TsekNet/hermes/internal/server"
 	"github.com/TsekNet/hermes/internal/store"
+	"github.com/TsekNet/hermes/internal/tray"
 	"github.com/google/deck"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
 
 var (
-	flagPort int
-	flagDB   string
+	flagPort   int
+	flagDB     string
+	flagNoTray bool
 )
 
 func serveCmd() *cobra.Command {
@@ -40,6 +43,7 @@ service restarts.`,
 	}
 	cmd.Flags().IntVar(&flagPort, "port", server.DefaultPort, "gRPC listen port")
 	cmd.Flags().StringVar(&flagDB, "db", "", "bolt database path (default: platform-specific)")
+	cmd.Flags().BoolVar(&flagNoTray, "no-tray", false, "disable system tray icon")
 	return cmd
 }
 
@@ -78,15 +82,61 @@ func runServe(_ *cobra.Command, _ []string) error {
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go drainQueue(mgr, s)
+
+	useTray := !flagNoTray && tray.ShouldEnable(runtime.GOOS, os.Getenv)
+
+	if useTray {
+		deck.Infof("hermes service starting on port %d with tray icon (per-user daemon, pid %d)", flagPort, os.Getpid())
+
+		// gRPC server runs in a goroutine; main goroutine owns the tray
+		// event loop (required by macOS Cocoa for the menu bar).
+		errCh := make(chan error, 1)
+		go func() { errCh <- srv.Serve() }()
+
+		// trayReady is closed by tray.Run's onReady callback. The
+		// shutdown goroutine waits on it so tray.Quit() is never
+		// called before systray.Run() has initialized.
+		trayReady := make(chan struct{})
+		go func() {
+			<-trayReady
+			select {
+			case sig := <-sigCh:
+				deck.Infof("received %s, shutting down", sig)
+				srv.Stop()
+				tray.Quit()
+			case err := <-errCh:
+				if err != nil {
+					deck.Errorf("grpc server: %v", err)
+				}
+				tray.Quit()
+			}
+		}()
+
+		tray.Run(tray.Config{
+			Count: mgr.ActiveCount,
+			Stop:  srv.Stop,
+			Port:  flagPort,
+			Ready: trayReady,
+		})
+
+		return nil
+	}
+
+	// No tray: original behavior, gRPC blocks the main goroutine.
+	if flagNoTray {
+		deck.Infof("hermes service starting on port %d (tray disabled, per-user daemon, pid %d)", flagPort, os.Getpid())
+	} else {
+		deck.Infof("hermes service starting on port %d (no display server, tray skipped, per-user daemon, pid %d)", flagPort, os.Getpid())
+	}
+
 	go func() {
 		sig := <-sigCh
 		deck.Infof("received %s, shutting down", sig)
 		srv.Stop()
 	}()
 
-	go drainQueue(mgr, s)
-
-	deck.Infof("hermes service starting on port %d (per-user daemon, pid %d)", flagPort, os.Getpid())
 	return srv.Serve()
 }
 

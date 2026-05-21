@@ -277,6 +277,20 @@ func (m *Manager) Cancel(id string) bool {
 	return true
 }
 
+// ActiveCount returns the number of non-done notifications.
+// Cheaper than List() when only the count is needed (e.g. tray badge).
+func (m *Manager) ActiveCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for _, n := range m.active {
+		if n.State != StateDone {
+			count++
+		}
+	}
+	return count
+}
+
 // List returns info about all non-done notifications.
 func (m *Manager) List() []NotificationInfo {
 	m.mu.Lock()

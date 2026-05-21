@@ -5,8 +5,11 @@
 Start the per-user service daemon, then submit notifications via CLI. The service manages the full lifecycle: UI launch, deferrals, and deadlines.
 
 ```bash
-# Start the per-user service daemon (see Architecture for autostart setup)
+# Start the per-user service daemon with system tray icon
 hermes serve
+
+# Start without tray icon (headless, SSH-only, CI)
+hermes serve --no-tray
 
 # Send a notification (blocks until user responds)
 hermes notify '{"heading":"Restart Required","message":"Please restart."}'
@@ -347,7 +350,7 @@ The second notification is held in `waiting_on_dependency` state until the first
 
 | Command | Description |
 |---------|-------------|
-| `hermes serve` | Start the gRPC service daemon |
+| `hermes serve` | Start the gRPC service daemon (with system tray icon when a display server is available) |
 | `hermes notify [config]` | Send notification to service (blocks for result). Broadcasts when run as SYSTEM/root ([details](broadcast.md)). |
 | `hermes list` | List active notifications |
 | `hermes cancel <id>` | Cancel an active notification |
@@ -370,6 +373,7 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `--local` | root | Render locally in current session (skip service) |
 | `--locale <code>` | root | Override locale for localized notifications (e.g. `ja`, `de`) |
 | `--port <int>` | serve, notify, list, cancel, stop, inbox | gRPC port (default: 4770) |
+| `--no-tray` | serve | Disable the system tray icon (default: auto-detect display server) |
 | `--db <path>` | serve, inbox, motd | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
 | `--json` | inbox | Print history as JSON instead of opening the UI |
 | `--help` | all | Print help |
