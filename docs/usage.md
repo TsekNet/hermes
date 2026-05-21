@@ -108,37 +108,30 @@ hermes accepts a single JSON or YAML config with these fields:
 
 **Styles:** `primary` (accent color), `secondary` (dark with border), `danger` (red).
 
-### URL and settings URI buttons
+### URI buttons
 
-Button values prefixed with `url:` open the URI in the default handler instead of closing the notification. Hermes supports platform-specific settings URIs alongside standard web URLs:
+Button values prefixed with `uri:` open the URI in the default system handler instead of closing the notification. Only schemes on the allowlist are permitted. The canonical list lives in [`internal/action/action.go`](../internal/action/action.go) (`allowedSchemes` variable). Schemes not on this list are rejected at validation time.
 
-| Scheme | Platform | Example |
-|--------|----------|---------|
-| `https:` | All | `url:https://example.com/kb/update` |
-| `http:` | All | `url:http://intranet.corp/install` |
-| `ms-settings:` | Windows | `url:ms-settings:windowsupdate` |
-| `x-apple.systempreferences:` | macOS | `url:x-apple.systempreferences:com.apple.Software-Update-Settings.extension` |
-
-Settings URIs are only allowed on their native platform. A `ms-settings:` button on macOS is silently blocked (and vice versa). Include both in a shared config -- hermes filters at runtime.
+Platform-specific schemes (e.g. `ms-settings:`) are delegated to the OS default handler. A `ms-settings:` button on macOS will fail gracefully since the OS has no handler registered.
 
 ```json
-{"label": "Windows Update", "value": "url:ms-settings:windowsupdate", "style": "primary"}
-{"label": "Software Update", "value": "url:x-apple.systempreferences:com.apple.Software-Update-Settings.extension", "style": "primary"}
-{"label": "FileVault", "value": "url:x-apple.systempreferences:com.apple.preference.security?FileVault", "style": "secondary"}
+{"label": "Windows Update", "value": "uri:ms-settings:windowsupdate", "style": "primary"}
+{"label": "Software Update", "value": "uri:x-apple.systempreferences:com.apple.Software-Update-Settings.extension", "style": "primary"}
+{"label": "FileVault", "value": "uri:x-apple.systempreferences:com.apple.preference.security?FileVault", "style": "secondary"}
 ```
 
 macOS pane IDs follow the pattern `com.apple.preference.<name>` or `com.apple.<Name>-Settings.extension`. Append `?Anchor` for sub-panes (e.g. `?FileVault`, `?Privacy_AllFiles`). Linux has no standard settings URI scheme.
 
-### Command buttons
+### Action buttons
 
-Button values prefixed with `cmd:` execute a shell command when clicked. The command runs through the platform shell (`cmd /C` on Windows, `sh -c` on Unix). Arguments, pipes, and shell features are supported.
+Button values prefixed with `action:` execute a built-in verb. No shell is invoked, no user input reaches the argument vector. The canonical verb list lives in [`internal/action/action.go`](../internal/action/action.go) (`validVerbs` variable). Platform implementations are in the `builtin_*.go` files in the same package.
 
 ```json
-{"label": "Restart Now", "value": "cmd:shutdown /r /t 0", "style": "primary"}
-{"label": "Reboot", "value": "cmd:sudo shutdown -r now", "style": "danger"}
+{"label": "Restart Now", "value": "action:reboot", "style": "primary"}
+{"label": "Lock Screen", "value": "action:lock", "style": "secondary"}
 ```
 
-Commands are also re-executable from the inbox history view. Empty commands (`cmd:` with no argument) are blocked. Only one primary button per notification is recommended -- the Enter key triggers the first primary button.
+Shell execution from config is not supported. To run arbitrary commands on a notification result, read the response value from stdout in the calling script and dispatch externally. Only one primary button per notification is recommended, the Enter key triggers the first primary button.
 
 ### Deferral config
 
@@ -200,7 +193,7 @@ Monitor filesystem paths for changes during the notification. When a watched pat
   ],
   "timeout": 600,
   "buttons": [
-    {"label": "Install", "value": "url:https://intranet.example.com/install", "style": "primary"}
+    {"label": "Install", "value": "uri:https://intranet.example.com/install", "style": "primary"}
   ]
 }
 ```
@@ -280,13 +273,13 @@ Map user responses to automatic follow-up actions. The action runs server-side a
     {"label": "Open Wiki", "value": "wiki", "style": "secondary"}
   ],
   "result_actions": {
-    "restart": "cmd:shutdown /r /t 60",
-    "wiki": "url:https://wiki.example.com/vpn"
+    "restart": "action:reboot",
+    "wiki": "uri:https://wiki.example.com/vpn"
   }
 }
 ```
 
-Supported prefixes: `cmd:` (shell command) and `url:` (opens in browser). Actions also fire on timeout if `timeout_value` matches a key (e.g. `"timeout:restart"` matches `"restart"`).
+Supported prefixes: `uri:` (opens in system handler, see [`allowedSchemes`](../internal/action/action.go)) and `action:` (built-in verb, see [`validVerbs`](../internal/action/action.go)). Actions also fire on timeout if `timeout_value` matches a key (e.g. `"timeout:restart"` matches `"restart"`).
 
 ### Quiet hours
 
@@ -384,6 +377,8 @@ The second notification is held in `waiting_on_dependency` state until the first
 ---
 
 ## Exit codes
+
+Exit code constants are defined in [`internal/exitcodes/exitcodes.go`](../internal/exitcodes/exitcodes.go). Key values:
 
 | Code | Meaning |
 |------|---------|

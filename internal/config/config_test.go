@@ -153,6 +153,33 @@ func TestValidate(t *testing.T) {
 				Buttons: []Button{{Label: "OK", Value: "ok"}},
 			},
 		},
+		{
+			name: "cmd: in button value rejected",
+			cfg: NotificationConfig{
+				Heading: "H", Message: "M",
+				Buttons: []Button{{Label: "Run", Value: "cmd:shutdown /r /t 0"}},
+			},
+			wantErr:   true,
+			errSubstr: "cmd: prefix is not allowed",
+		},
+		{
+			name: "CMD: in button value rejected (case-insensitive)",
+			cfg: NotificationConfig{
+				Heading: "H", Message: "M",
+				Buttons: []Button{{Label: "Run", Value: "CMD:echo hello"}},
+			},
+			wantErr:   true,
+			errSubstr: "cmd: prefix is not allowed",
+		},
+		{
+			name: "cmd: in dropdown value rejected",
+			cfg: NotificationConfig{
+				Heading: "H", Message: "M",
+				Buttons: []Button{{Label: "D", Dropdown: []DropdownOption{{Label: "X", Value: "cmd:echo"}}}},
+			},
+			wantErr:   true,
+			errSubstr: "cmd: prefix is not allowed",
+		},
 	}
 
 	for _, tt := range tests {
@@ -820,15 +847,20 @@ func TestValidate_ResultActions(t *testing.T) {
 		errSubstr string
 	}{
 		{"nil is valid", nil, false, ""},
-		{"valid cmd", map[string]string{"restart": "cmd:shutdown /r /t 60"}, false, ""},
-		{"valid url", map[string]string{"wiki": "url:https://wiki.example.com"}, false, ""},
-		{"valid https", map[string]string{"wiki": "https://wiki.example.com"}, false, ""},
+		{"valid uri https", map[string]string{"wiki": "uri:https://wiki.example.com"}, false, ""},
+		{"valid uri ms-settings", map[string]string{"settings": "uri:ms-settings:windowsupdate"}, false, ""},
+		{"valid action reboot", map[string]string{"restart": "action:reboot"}, false, ""},
+		{"valid action shutdown", map[string]string{"halt": "action:shutdown"}, false, ""},
+		{"valid action lock", map[string]string{"lock": "action:lock"}, false, ""},
+		{"cmd rejected", map[string]string{"restart": "cmd:shutdown /r /t 60"}, true, "cmd: prefix is not allowed"},
+		{"bare https rejected", map[string]string{"wiki": "https://wiki.example.com"}, true, "must start with uri: or action:"},
+		{"bare http rejected", map[string]string{"wiki": "http://wiki.example.com"}, true, "must start with uri: or action:"},
 		{"bad prefix", map[string]string{"restart": "ftp://evil.com"}, true, "result_actions"},
-		{"key with newline", map[string]string{"bad\nkey": "cmd:echo"}, true, "newlines"},
+		{"key with newline", map[string]string{"bad\nkey": "uri:https://x.com"}, true, "newlines"},
 		{"too many actions", func() map[string]string {
 			m := make(map[string]string, 11)
 			for i := range 11 {
-				m[fmt.Sprintf("k%d", i)] = fmt.Sprintf("cmd:echo %d", i)
+				m[fmt.Sprintf("k%d", i)] = fmt.Sprintf("uri:https://x.com/%d", i)
 			}
 			return m
 		}(), true, "exceeds maximum"},
@@ -1106,3 +1138,44 @@ quiet_hours:
 	}
 }
 
+
+func TestHasValue(t *testing.T) {
+	t.Parallel()
+
+	cfg := NotificationConfig{
+		Heading:      "H",
+		Message:      "M",
+		TimeoutValue: "timeout",
+		EscValue:     "esc",
+		Buttons: []Button{
+			{Label: "OK", Value: "ok"},
+			{Label: "Menu", Dropdown: []DropdownOption{
+				{Label: "A", Value: "opt-a"},
+				{Label: "B", Value: "opt-b"},
+			}},
+		},
+	}
+
+	tests := []struct {
+		value string
+		want  bool
+	}{
+		{"ok", true},
+		{"opt-a", true},
+		{"opt-b", true},
+		{"timeout", true},
+		{"esc", true},
+		{"unknown", false},
+		{"cmd:echo", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.value, func(t *testing.T) {
+			t.Parallel()
+			if got := cfg.HasValue(tt.value); got != tt.want {
+				t.Errorf("HasValue(%q) = %v, want %v", tt.value, got, tt.want)
+			}
+		})
+	}
+}

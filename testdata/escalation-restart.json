@@ -40,6 +40,6 @@
     }
   ],
   "result_actions": {
-    "restart": "url:https://github.com/TsekNet/hermes"
+    "restart": "uri:https://github.com/TsekNet/hermes"
   }
 }

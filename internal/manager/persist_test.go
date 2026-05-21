@@ -191,7 +191,7 @@ func TestListHistory(t *testing.T) {
 	mgr := New(nil, s)
 
 	// Complete two notifications to populate history.
-	for i, val := range []string{"ok", "timeout:auto"} {
+	for i, val := range []string{"ok", "timeout:restart"} {
 		cfg := testConfig(fmt.Sprintf("LH-%d", i))
 		id, _ := mgr.Submit(cfg)
 		mgr.ReportChoice(id, val)

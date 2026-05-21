@@ -13,6 +13,6 @@
     { "label": "Defer 1h", "value": "defer_1h", "style": "secondary" }
   ],
   "result_actions": {
-    "restart": "url:https://github.com/TsekNet/hermes"
+    "restart": "uri:https://github.com/TsekNet/hermes"
   }
 }

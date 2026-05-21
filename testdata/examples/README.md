@@ -78,7 +78,7 @@ Delivery is suppressed during a configured daily window (e.g. 22:00 -- 07:00).
 
 ### Action chaining
 
-Button clicks trigger follow-up actions (`cmd:` or `url:` prefixes).
+Button clicks trigger follow-up actions (`action:` or `uri:` prefixes).
 
 ![action-chaining](action-chaining.png)
 

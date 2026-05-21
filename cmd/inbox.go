@@ -28,8 +28,8 @@ func inboxCmd() *cobra.Command {
 		Use:   "inbox",
 		Short: "View notification history",
 		Long: `Opens the notification history UI showing past notifications, or prints
-history as JSON. Action buttons in the history view execute cmd:-prefixed
-response values (e.g. "cmd:shutdown /r /t 0") via the platform shell.`,
+history as JSON. Action buttons in the history view re-execute the original
+action (uri: opens the URI, action: runs the built-in verb).`,
 		Example: `  hermes inbox
   hermes inbox --json`,
 		RunE: func(_ *cobra.Command, _ []string) error {

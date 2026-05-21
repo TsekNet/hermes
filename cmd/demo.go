@@ -31,8 +31,8 @@ func demoConfig() *config.NotificationConfig {
 				Label: "Explore",
 				Style: "secondary",
 				Dropdown: []config.DropdownOption{
-					{Label: "View Docs", Value: "url:https://github.com/TsekNet/hermes#readme"},
-					{Label: "View Source", Value: "url:https://github.com/TsekNet/hermes"},
+					{Label: "View Docs", Value: "uri:https://github.com/TsekNet/hermes#readme"},
+					{Label: "View Source", Value: "uri:https://github.com/TsekNet/hermes"},
 				},
 			},
 			{Label: "Got it", Value: "ok", Style: "primary"},

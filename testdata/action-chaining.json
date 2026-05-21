@@ -13,7 +13,7 @@
     { "label": "Dismiss", "value": "dismiss", "style": "secondary" }
   ],
   "result_actions": {
-    "reconnect": "url:https://github.com/TsekNet/hermes",
-    "wiki": "url:https://github.com/TsekNet/hermes#readme"
+    "reconnect": "uri:https://github.com/TsekNet/hermes",
+    "wiki": "uri:https://github.com/TsekNet/hermes#readme"
   }
 }

@@ -1,13 +1,14 @@
-// Package action validates, classifies, and executes button response values.
-// Values use a prefix scheme: url: opens a browser, cmd: runs a shell command,
-// ms-settings: / x-apple.systempreferences: open platform settings panels,
-// and plain values are returned as-is.
+// Package action validates, classifies, and executes notification response values.
+// Values use a prefix scheme: uri: opens a URI via the OS default handler,
+// action: runs a built-in verb (reboot, shutdown, lock), and plain values
+// are returned as-is to the calling script via the manager layer.
+//
+// The cmd: prefix is explicitly rejected. Shell execution from config input
+// is not permitted. URI schemes use an allowlist, not a denylist.
 package action
 
 import (
 	"fmt"
-	"net/url"
-	"os/exec"
 	"runtime"
 	"strings"
 
@@ -19,26 +20,46 @@ import (
 type Kind int
 
 const (
-	KindUnknown  Kind = iota
-	KindWeb           // http, https
-	KindSettings      // platform settings panel
-	KindCommand       // shell command execution
+	KindUnknown Kind = iota
+	KindURI          // uri: prefix, opened by OS default handler
+	KindBuiltin      // action: prefix, compiled verb (reboot, shutdown, lock)
 )
 
-// Scheme is a registered action prefix with its kind and platform constraint.
-type Scheme struct {
-	Prefix   string // prefix including ":" (e.g. "cmd:")
-	Kind     Kind
-	Platform string // GOOS value, or "" for all platforms
-	Example  string
+var allowedSchemes = []string{
+	"https:",
+	"http:",
+	"ms-settings:",
+	"x-apple.systempreferences:",
+	"slack:",
+	"msteams:",
+	"companyportal:",
+	"codex:",
 }
 
-var registry = []Scheme{
-	{Prefix: "https:", Kind: KindWeb, Example: "https://example.com"},
-	{Prefix: "http:", Kind: KindWeb, Example: "http://intranet.corp/kb"},
-	{Prefix: "ms-settings:", Kind: KindSettings, Platform: "windows", Example: "ms-settings:windowsupdate"},
-	{Prefix: "x-apple.systempreferences:", Kind: KindSettings, Platform: "darwin", Example: "x-apple.systempreferences:com.apple.preference.security"},
-	{Prefix: "cmd:", Kind: KindCommand, Example: "cmd:shutdown /r /t 0"},
+var validVerbs = []string{"reboot", "shutdown", "lock"}
+
+// ValidVerbs returns the list of supported action: verbs.
+func ValidVerbs() []string {
+	out := make([]string, len(validVerbs))
+	copy(out, validVerbs)
+	return out
+}
+
+// AllowedSchemes returns the list of URI schemes permitted by the allowlist.
+func AllowedSchemes() []string {
+	out := make([]string, len(allowedSchemes))
+	copy(out, allowedSchemes)
+	return out
+}
+
+// IsURI reports whether value uses the uri: prefix.
+func IsURI(value string) bool {
+	return strings.HasPrefix(strings.ToLower(value), "uri:")
+}
+
+// IsBuiltin reports whether value uses the action: prefix.
+func IsBuiltin(value string) bool {
+	return strings.HasPrefix(strings.ToLower(value), "action:")
 }
 
 // Allowed reports whether value is permitted on the current OS.
@@ -47,117 +68,119 @@ func Allowed(value string) bool {
 }
 
 // AllowedOn reports whether value is permitted on the given OS.
+// The goos parameter is accepted for test-time cross-platform verification
+// but does not currently gate any scheme or verb by platform.
 func AllowedOn(value, goos string) bool {
 	lower := strings.ToLower(value)
-	for _, s := range registry {
-		if !strings.HasPrefix(lower, s.Prefix) {
-			continue
-		}
-		if s.Platform != "" && s.Platform != goos {
+
+	if strings.HasPrefix(lower, "cmd:") {
+		return false
+	}
+
+	if strings.HasPrefix(lower, "uri:") {
+		body := uriBody(value)
+		if body == "" {
 			return false
 		}
-		if s.Kind == KindCommand {
-			return strings.TrimSpace(value[len("cmd:"):]) != ""
-		}
-		_, err := url.Parse(value)
-		return err == nil
+		return isAllowedScheme(body)
 	}
+
+	if strings.HasPrefix(lower, "action:") {
+		return isValidVerb(actionVerb(value))
+	}
+
 	return false
 }
 
 // ClassifyOn returns the Kind of a value on the given OS.
 func ClassifyOn(value, goos string) Kind {
 	lower := strings.ToLower(value)
-	for _, s := range registry {
-		if strings.HasPrefix(lower, s.Prefix) {
-			if s.Platform != "" && s.Platform != goos {
-				return KindUnknown
-			}
-			return s.Kind
+
+	if strings.HasPrefix(lower, "uri:") {
+		body := uriBody(value)
+		if body == "" || !isAllowedScheme(body) {
+			return KindUnknown
 		}
+		return KindURI
 	}
+
+	if strings.HasPrefix(lower, "action:") {
+		if isValidVerb(actionVerb(value)) {
+			return KindBuiltin
+		}
+		return KindUnknown
+	}
+
 	return KindUnknown
 }
 
-// SettingsSchemes returns the settings schemes available on the given OS.
-func SettingsSchemes(goos string) []Scheme {
-	var out []Scheme
-	for _, s := range registry {
-		if s.Kind == KindSettings && (s.Platform == "" || s.Platform == goos) {
-			out = append(out, s)
-		}
+// OpenURI opens a URI via the OS default handler after checking the allowlist.
+func OpenURI(uri string) error {
+	uri = strings.TrimSpace(uri)
+	if uri == "" {
+		return fmt.Errorf("empty URI")
 	}
-	return out
-}
-
-// AllSchemes returns every registered scheme available on the given OS.
-func AllSchemes(goos string) []Scheme {
-	var out []Scheme
-	for _, s := range registry {
-		if s.Platform == "" || s.Platform == goos {
-			out = append(out, s)
-		}
+	if !isAllowedScheme(uri) {
+		return fmt.Errorf("URI scheme not allowed: %s", uri)
 	}
-	return out
+	deck.Infof("action: open URI %q", uri)
+	return browser.OpenURL(uri)
 }
 
-// IsCommand reports whether value uses the cmd: prefix.
-func IsCommand(value string) bool {
-	return strings.HasPrefix(strings.ToLower(value), "cmd:")
-}
-
-// CommandString extracts the shell command from a cmd: value.
-func CommandString(value string) string {
-	if len(value) <= len("cmd:") {
-		return ""
+// RunBuiltin executes a built-in action verb on the current OS.
+func RunBuiltin(verb string) error {
+	verb = strings.ToLower(strings.TrimSpace(verb))
+	if !isValidVerb(verb) {
+		return fmt.Errorf("unknown action verb: %q", verb)
 	}
-	return strings.TrimSpace(value[len("cmd:"):])
-}
-
-// RunCommand executes a cmd:-prefixed value via the platform shell.
-func RunCommand(value string) (string, error) {
-	return RunCommandOn(value, runtime.GOOS)
+	deck.Infof("action: builtin %q (os=%s)", verb, runtime.GOOS)
+	return platformRunBuiltin(verb)
 }
 
 // Dispatch executes an action string from the server side (no Wails context).
-// Handles url:, cmd:, and platform settings prefixes. Returns nil for plain
-// values that don't match any action prefix. Used by the manager for
-// resultActions (action chaining after notification completion).
+// Handles uri: and action: prefixes. Returns nil for plain values (the manager
+// layer reads these from the Notify response). Rejects cmd: with an error.
 func Dispatch(value string) error {
-	// Strip "url:" wrapper — same as the frontend app layer does.
-	if strings.HasPrefix(value, "url:") {
-		uri := strings.TrimPrefix(value, "url:")
-		if !Allowed(uri) {
-			return fmt.Errorf("blocked URI: %s", uri)
-		}
-		deck.Infof("action: dispatch url %q", uri)
-		return browser.OpenURL(uri)
+	lower := strings.ToLower(value)
+
+	if strings.HasPrefix(lower, "cmd:") {
+		return fmt.Errorf("cmd: prefix is not supported, use action: or uri: instead")
 	}
-	if IsCommand(value) {
-		if !Allowed(value) {
-			return fmt.Errorf("blocked command: %s", value)
-		}
-		out, err := RunCommand(value)
-		if err != nil {
-			return fmt.Errorf("command failed: %w: %s", err, out)
-		}
-		return nil
+
+	if strings.HasPrefix(lower, "uri:") {
+		return OpenURI(uriBody(value))
 	}
+
+	if strings.HasPrefix(lower, "action:") {
+		return RunBuiltin(actionVerb(value))
+	}
+
 	return nil
 }
 
-// RunCommandOn executes a cmd:-prefixed value using the shell for the given OS.
-// Exported for cross-platform testing.
-func RunCommandOn(value, goos string) (string, error) {
-	cmdStr := CommandString(value)
-	deck.Infof("action: exec %q (os=%s)", cmdStr, goos)
+func uriBody(value string) string {
+	return strings.TrimSpace(value[len("uri:"):])
+}
 
-	var cmd *exec.Cmd
-	if goos == "windows" {
-		cmd = exec.Command("cmd", "/C", cmdStr)
-	} else {
-		cmd = exec.Command("sh", "-c", cmdStr)
+func actionVerb(value string) string {
+	return strings.ToLower(strings.TrimSpace(value[len("action:"):]))
+}
+
+func isAllowedScheme(uri string) bool {
+	lower := strings.ToLower(uri)
+	for _, s := range allowedSchemes {
+		if strings.HasPrefix(lower, s) {
+			return true
+		}
 	}
-	out, err := cmd.CombinedOutput()
-	return string(out), err
+	return false
+}
+
+func isValidVerb(verb string) bool {
+	for _, v := range validVerbs {
+		if v == verb {
+			return true
+		}
+	}
+	return false
 }
