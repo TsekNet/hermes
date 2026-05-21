@@ -95,6 +95,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Localization** | `heading_localized` / `message_localized` maps + `--locale` flag for multi-language notifications. |
 | **Dependencies** | Sequential workflows: notification B waits for notification A to complete. |
 | **Broadcast** | Run as SYSTEM/root, auto-delivers to all active user sessions. No wrapper scripts needed. |
+| **System tray icon** | Persistent notification-area icon with pending count and quick inbox access. Auto-detected on desktop sessions, skipped on headless. |
 
 ## Why web-based
 

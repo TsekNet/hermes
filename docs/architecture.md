@@ -20,17 +20,23 @@ The notification UI is a web page, not a native dialog. HTML, CSS, and JavaScrip
 
 hermes runs as a **per-user** service daemon (`hermes serve`) in the user's desktop session. Because it's already in the user's session, it launches webviews directly — no privilege escalation or session-crossing tools needed.
 
+When a display server is available, the service shows a **system tray icon** (Windows notification area, macOS menu bar, Linux StatusNotifierItem). The tray provides at-a-glance pending notification count and quick access to the inbox UI. On headless systems or when started with `--no-tray`, the service runs without a tray icon.
+
 ```mermaid
 sequenceDiagram
     participant Script as Script (elevated)
     participant Service as hermes serve (user session)
+    participant Tray as System tray icon
     participant UI as Webview (user session)
 
+    Service->>Tray: Show icon + pending count
     Script->>Service: gRPC Notify on localhost:4770
     Service->>UI: Launch webview directly (same session)
     UI->>Service: gRPC ReportChoice
     Service->>Script: Notify RPC returns result
     Note over Service: Deferral? Internal timer, re-launch UI later
+    Tray->>Service: User clicks "Open Inbox"
+    Service->>UI: Launch inbox webview
 ```
 
 ---
@@ -241,6 +247,7 @@ hermes/
 │   ├── server/                    gRPC server implementation
 │   ├── store/                     bbolt persistence (deferral state + offline queue)
 │   ├── action/                    Button value dispatch (uri:, action:)
+│   ├── tray/                      System tray icon (fyne.io/systray, pure Go on Linux/Windows)
 │   └── watch/                     Filesystem monitoring (fsnotify wrapper)
 │
 ├── frontend/                      The web UI (embedded into binary)
