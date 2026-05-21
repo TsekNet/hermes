@@ -4,7 +4,6 @@ package app
 import (
 	"context"
 	goRuntime "runtime"
-	"strings"
 	"time"
 
 	"github.com/TsekNet/hermes/internal/config"
@@ -127,18 +126,17 @@ func (a *App) Ready() {
 	wailsRuntime.WindowShow(a.ctx)
 }
 
-// Respond handles the user's choice. Opens URLs, runs commands, sends gRPC, quits.
+// Respond handles the user's choice. Opens URIs, runs builtins, sends gRPC, quits.
 func (a *App) Respond(value string) {
-	if strings.HasPrefix(value, "url:") {
-		a.openURL(strings.TrimPrefix(value, "url:"))
+	if action.IsURI(value) {
+		a.openURI(value[len("uri:"):])
 		return
 	}
 
-	if action.IsCommand(value) {
-		if !action.Allowed(value) {
-			deck.Warningf("blocked command: %s", value)
-		} else if out, err := action.RunCommand(value); err != nil {
-			deck.Errorf("cmd: %v: %s", err, out)
+	if action.IsBuiltin(value) {
+		verb := value[len("action:"):]
+		if err := action.RunBuiltin(verb); err != nil {
+			deck.Errorf("action: %v", err)
 		}
 	}
 
@@ -163,14 +161,13 @@ func (a *App) Respond(value string) {
 // OpenHelp opens the help URL in the default browser.
 func (a *App) OpenHelp() {
 	if a.cfg.HelpURL != "" {
-		a.openURL(a.cfg.HelpURL)
+		a.openURI(a.cfg.HelpURL)
 	}
 }
 
-func (a *App) openURL(rawURL string) {
-	if !action.Allowed(rawURL) {
-		deck.Warningf("blocked URI: %s", rawURL)
+func (a *App) openURI(rawURI string) {
+	if err := action.OpenURI(rawURI); err != nil {
+		deck.Warningf("open URI: %v", err)
 		return
 	}
-	wailsRuntime.BrowserOpenURL(a.ctx, rawURL)
 }

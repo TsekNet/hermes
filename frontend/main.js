@@ -314,7 +314,7 @@
 
   function onButtonClick(e) {
     var value = e.target.getAttribute("data-value");
-    if (value && value.indexOf("url:") === 0) {
+    if (value && value.toLowerCase().indexOf("uri:") === 0) {
       if (Backend) Backend.Respond(value);
       return;
     }

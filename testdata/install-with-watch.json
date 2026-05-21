@@ -9,7 +9,7 @@
     "/var/db/receipts/com.example.security-agent.plist"
   ],
   "buttons": [
-    {"label": "Install", "value": "url:https://intranet.example.com/install-agent", "style": "primary"},
+    {"label": "Install", "value": "uri:https://intranet.example.com/install-agent", "style": "primary"},
     {"label": "Dismiss", "value": "dismiss", "style": "secondary"}
   ]
 }

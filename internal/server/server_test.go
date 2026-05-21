@@ -61,6 +61,10 @@ func testConfigJSON(heading string) []byte {
 		Message:        "Test message",
 		TimeoutSeconds: 10,
 		TimeoutValue:   "auto",
+		Buttons: []config.Button{
+			{Label: "OK", Value: "ok"},
+			{Label: "Restart", Value: "restart"},
+		},
 	}
 	data, _ := json.Marshal(cfg)
 	return data

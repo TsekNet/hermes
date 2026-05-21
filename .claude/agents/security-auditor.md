@@ -30,7 +30,7 @@ Review: new RPCs without auth interceptor, responses leaking internal state, unb
 
 ## NOT a Finding
 
-- `cmd:` executing arbitrary commands (intentional, auth-gated)
+- `action:` verbs invoking platform commands (intentional, hardcoded, auth-gated)
 - No TLS on localhost (intentional, token auth)
 - `RequireTransportSecurity() = false` (correct for localhost)
 

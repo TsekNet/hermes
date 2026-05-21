@@ -84,13 +84,13 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Image carousel** | Embed slides/screenshots via HTTPS URLs or data URIs. Arrow key navigation. |
 | **Filesystem watch** | Monitor paths for changes (e.g. wait for install receipt). UI updates live. |
 | **Do Not Disturb** | Detects OS Focus/DND mode. Default: wait and retry. Also: skip or ignore. |
-| **Settings URIs** | `url:ms-settings:windowsupdate` (Windows), `url:x-apple.systempreferences:...` (macOS). Platform-filtered at runtime. |
+| **Settings URIs** | `uri:ms-settings:windowsupdate` (Windows), `uri:x-apple.systempreferences:...` (macOS). Platform-filtered at runtime. |
 | **Countdown timer** | Auto-action after timeout. Configurable value returned to calling script. |
 | **Inbox / history** | Completed notifications are persisted. View past actions via `hermes inbox` (UI or JSON). Auto-pruned by age and count. |
 | **Offline queue** | Service unreachable? Notification is persisted locally and delivered on next startup. Exit 203. |
 | **Priority** | Control delivery order (0-10). Higher priority notifications drain first. |
 | **Escalation ladder** | Progressive urgency after repeated deferrals — shorter timeout, warning color, urgency text. |
-| **Action chaining** | Map user responses to automatic follow-up actions (`cmd:` or `url:` prefix). |
+| **Action chaining** | Map user responses to automatic follow-up actions (`action:` or `uri:` prefix). |
 | **Quiet hours** | Time-based delivery suppression. Overnight ranges supported. |
 | **Localization** | `heading_localized` / `message_localized` maps + `--locale` flag for multi-language notifications. |
 | **Dependencies** | Sequential workflows: notification B waits for notification A to complete. |

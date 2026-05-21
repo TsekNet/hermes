@@ -69,8 +69,7 @@ type NotificationConfig struct {
 	Escalation []EscalationStep `json:"escalation,omitempty" yaml:"escalation,omitempty"`
 
 	// ResultActions maps response values to automatic follow-up actions.
-	// Keys are button values (e.g. "restart"), values use the same prefix
-	// scheme as buttons: "cmd:shutdown /r /t 60", "url:https://...".
+	// Keys are button values (e.g. "restart"), values use "uri:" or "action:" prefixes.
 	// The action is dispatched server-side after the notification completes.
 	ResultActions map[string]string `json:"result_actions,omitempty" yaml:"result_actions,omitempty"`
 
@@ -207,6 +206,28 @@ type Button struct {
 type DropdownOption struct {
 	Label string `json:"label" yaml:"label"`
 	Value string `json:"value" yaml:"value"`
+}
+
+// HasValue reports whether value is a known response for this config:
+// any button value, dropdown value, timeout_value, or esc_value.
+func (c *NotificationConfig) HasValue(value string) bool {
+	if value == "" {
+		return false
+	}
+	if value == c.TimeoutValue || value == c.EscValue {
+		return true
+	}
+	for _, b := range c.Buttons {
+		if b.Value == value {
+			return true
+		}
+		for _, d := range b.Dropdown {
+			if d.Value == value {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // MaxConfigSize is the maximum allowed config payload (64 KB).
@@ -374,12 +395,20 @@ func (c *NotificationConfig) Validate() error {
 		errs = append(errs, `"message" is required`)
 	}
 	for i := range c.Buttons {
-		if strings.ContainsAny(c.Buttons[i].Value, "\n\r") {
+		bv := c.Buttons[i].Value
+		if strings.ContainsAny(bv, "\n\r") {
 			errs = append(errs, "button values must not contain newlines")
 		}
+		if strings.HasPrefix(strings.ToLower(bv), "cmd:") {
+			errs = append(errs, fmt.Sprintf("buttons[%d]: cmd: prefix is not allowed, use action: or uri: instead", i))
+		}
 		for j := range c.Buttons[i].Dropdown {
-			if strings.ContainsAny(c.Buttons[i].Dropdown[j].Value, "\n\r") {
+			dv := c.Buttons[i].Dropdown[j].Value
+			if strings.ContainsAny(dv, "\n\r") {
 				errs = append(errs, "dropdown values must not contain newlines")
+			}
+			if strings.HasPrefix(strings.ToLower(dv), "cmd:") {
+				errs = append(errs, fmt.Sprintf("buttons[%d].dropdown[%d]: cmd: prefix is not allowed, use action: or uri: instead", i, j))
 			}
 		}
 	}
@@ -440,9 +469,10 @@ func (c *NotificationConfig) Validate() error {
 			errs = append(errs, fmt.Sprintf("result_actions key %q: must not contain newlines", k))
 		}
 		lower := strings.ToLower(v)
-		if !strings.HasPrefix(lower, "cmd:") && !strings.HasPrefix(lower, "url:") &&
-			!strings.HasPrefix(lower, "https:") && !strings.HasPrefix(lower, "http:") {
-			errs = append(errs, fmt.Sprintf("result_actions[%q]: value must start with cmd:, url:, https:, or http:", k))
+		if strings.HasPrefix(lower, "cmd:") {
+			errs = append(errs, fmt.Sprintf("result_actions[%q]: cmd: prefix is not allowed, use action: or uri: instead", k))
+		} else if !strings.HasPrefix(lower, "uri:") && !strings.HasPrefix(lower, "action:") {
+			errs = append(errs, fmt.Sprintf("result_actions[%q]: value must start with uri: or action:", k))
 		}
 	}
 	if c.DependsOn != "" && c.DependsOn == c.ID {

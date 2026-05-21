@@ -39,6 +39,9 @@ func testCfg(id string) *config.NotificationConfig {
 		TimeoutSeconds: 10,
 		TimeoutValue:   "auto",
 		ID:             id,
+		Buttons: []config.Button{
+			{Label: "OK", Value: "ok"},
+		},
 	}
 }
 

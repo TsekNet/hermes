@@ -44,7 +44,7 @@ sequenceDiagram
 5. **Launch** — Service launches a UI subprocess directly (same user session).
 6. **Response** — User clicks a button. UI reports choice via `ReportChoice` RPC. `Notify` RPC unblocks and returns the value.
 7. **Defer + Escalation** — User defers. Manager increments defer count, starts an internal timer, and re-launches the UI when the timer fires. If `escalation` thresholds are configured, the notification's appearance and timeout mutate progressively (shorter timeout, warning color, urgency text).
-8. **Action chaining** — When the notification completes, the manager checks `result_actions` for a mapping from the user's response value to an automatic action (`cmd:` or `url:` prefix). The action is dispatched server-side.
+8. **Action chaining** — When the notification completes, the manager checks `result_actions` for a mapping from the user's response value to an automatic action (`uri:` or `action:` prefix). The action is dispatched server-side.
 9. **Deadline** — If `defer_deadline` is set and the deadline passes, the notification auto-actions with `timeout_value`. Deadlines are enforced even while waiting for DND or quiet hours to clear.
 10. **Cancel** — External `Cancel` RPC removes the notification and unblocks the `Notify` RPC.
 
@@ -79,15 +79,22 @@ The `result_actions` map connects user responses to automatic follow-up actions.
 ```json
 {
   "result_actions": {
-    "restart": "cmd:shutdown /r /t 60",
-    "wiki": "url:https://wiki.example.com/vpn-troubleshooting"
+    "restart": "action:reboot",
+    "wiki": "uri:https://wiki.example.com/vpn-troubleshooting"
   }
 }
 ```
 
-Supported action prefixes: `cmd:` (shell command), `url:` (opens in default browser / system handler). The action runs in the service daemon process, not the UI subprocess.
+Supported action prefixes:
 
-> **Security note:** `cmd:` actions execute with the same privileges as the `hermes serve` process (the logged-in user). Only trusted configs should define `result_actions`. Configs are validated on enqueue and drain, but the shell command itself is passed to `sh -c` / `cmd /C` without further sandboxing.
+| Prefix | Behavior |
+|--------|----------|
+| `uri:` | Opens the URI in the default system handler. Only allowlisted schemes are permitted (see [`allowedSchemes` in action.go](../internal/action/action.go)). |
+| `action:` | Executes a built-in verb with platform-specific implementations (see [`validVerbs` in action.go](../internal/action/action.go) and `builtin_*.go` for per-platform details). |
+
+The action runs in the service daemon process, not the UI subprocess. Shell execution from config is not supported. To run arbitrary commands on a notification result, read the response value from stdout in the calling script and dispatch externally.
+
+> **Security note:** `action:` verbs invoke platform commands with fixed implementations (no shell interpolation). Only trusted configs should define `result_actions`.
 
 ---
 
@@ -233,7 +240,7 @@ hermes/
 │   ├── ratelimit/                 Token-bucket rate limiter for gRPC RPCs
 │   ├── server/                    gRPC server implementation
 │   ├── store/                     bbolt persistence (deferral state + offline queue)
-│   ├── action/                    Button value dispatch (url:, cmd:, ms-settings:, x-apple.systempreferences:)
+│   ├── action/                    Button value dispatch (uri:, action:)
 │   └── watch/                     Filesystem monitoring (fsnotify wrapper)
 │
 ├── frontend/                      The web UI (embedded into binary)
@@ -382,7 +389,7 @@ JS communicates with Go through Wails runtime bindings:
 
 **Inbox view (`InboxApp`):**
 - `GetHistory()` — return completed notification entries
-- `RunAction(id, value)` — re-execute a `cmd:`-prefixed action from history
+- `RunAction(id, value)` — re-execute a `uri:` or `action:` button from history
 - `Ready()` — center and show the inbox window
 
 Wails event channels:

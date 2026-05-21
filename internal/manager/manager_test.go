@@ -16,6 +16,13 @@ func testConfig(heading string) *config.NotificationConfig {
 		Message:        "Test message",
 		TimeoutSeconds: 10,
 		TimeoutValue:   "auto_action",
+		EscValue:       "timeout:restart",
+		Buttons: []config.Button{
+			{Label: "OK", Value: "ok"},
+			{Label: "Restart", Value: "restart"},
+			{Label: "Defer", Value: "defer_4h"},
+			{Label: "Timeout", Value: "timeout"},
+		},
 	}
 }
 
@@ -142,6 +149,22 @@ func TestReportChoice(t *testing.T) {
 				t.Fatal("timeout waiting for result")
 			}
 		})
+	}
+}
+
+func TestReportChoice_RejectsUnknownValue(t *testing.T) {
+	t.Parallel()
+	mgr := New(nil, nil)
+	id, _ := mgr.Submit(testConfig("S5"))
+
+	ok := mgr.ReportChoice(id, "cmd:evil")
+	if ok {
+		t.Fatal("ReportChoice accepted unknown value 'cmd:evil'")
+	}
+
+	ok = mgr.ReportChoice(id, "crafted_key")
+	if ok {
+		t.Fatal("ReportChoice accepted unknown value 'crafted_key'")
 	}
 }
 

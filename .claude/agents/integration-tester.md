@@ -49,7 +49,7 @@ For each fixture, report:
 
 ## Important Constraints
 
-- **Never run fixtures with `cmd:` actions that have real side effects** (e.g. `cmd:shutdown`). Check `result_actions` values before running. If any action would execute a destructive command on timeout, skip the fixture and flag it.
+- **Never run fixtures with destructive `action:` verbs** (e.g. `action:reboot`, `action:shutdown`). Check `result_actions` values before running. If any action would execute a destructive verb on timeout, skip the fixture and flag it.
 - **Local mode (`--local`)** runs single-process without the gRPC daemon. It tests config parsing, UI rendering, and timeout behavior, not the full service path.
 - **Default to fast timeouts**: patch configs via `jq '.timeout = 5'` before running unless the user wants full-length runs. Full suite finishes in ~90s instead of ~15min.
 
@@ -62,7 +62,7 @@ Fixtures: 15 found, 15 runnable, 0 skipped
 PASS  simple-notification.json        (exit=<timeout_code>, 5s)
 PASS  restart-notification.json       (exit=<timeout_code>, 5s)
 FAIL  action-chaining.json            (exit=0, expected=<timeout_code>)
-SKIP  dangerous-fixture.json          (cmd:shutdown in result_actions)
+SKIP  dangerous-fixture.json          (action:reboot in result_actions)
 
 Results: 13/15 passed, 1 failed, 1 skipped
 ```

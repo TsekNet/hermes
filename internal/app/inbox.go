@@ -94,15 +94,15 @@ func InboxEntryFromClientEntry(e client.HistoryEntry) InboxEntry {
 	}
 }
 
-// RunAction executes a cmd:-prefixed value, or returns the plain value.
+// RunAction re-opens a uri:-prefixed value from history. Only uri: is
+// supported from the inbox: re-running action:reboot from history would
+// be a footgun.
 func (a *InboxApp) RunAction(id, value string) string {
 	deck.Infof("inbox: action %s -> %s", id, value)
-	if action.IsCommand(value) {
-		if !action.Allowed(value) {
-			return "blocked"
-		}
-		if out, err := action.RunCommand(value); err != nil {
-			deck.Errorf("inbox: command failed: %v: %s", err, out)
+	if action.IsURI(value) {
+		uri := value[len("uri:"):]
+		if err := action.OpenURI(uri); err != nil {
+			deck.Errorf("inbox: open URI failed: %v", err)
 			return "error: " + err.Error()
 		}
 		return "ok"

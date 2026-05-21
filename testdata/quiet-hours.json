@@ -16,6 +16,6 @@
     { "label": "Defer 4h", "value": "defer_4h", "style": "secondary" }
   ],
   "result_actions": {
-    "update": "url:https://github.com/TsekNet/hermes"
+    "update": "uri:https://github.com/TsekNet/hermes"
   }
 }

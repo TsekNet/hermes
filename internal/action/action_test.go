@@ -15,39 +15,86 @@ func TestAllowedOn(t *testing.T) {
 		goos  string
 		want  bool
 	}{
-		{"https any platform", "https://example.com", "windows", true},
-		{"http any platform", "http://intranet/kb", "darwin", true},
+		// uri: with allowed schemes
+		{"https any platform", "uri:https://example.com", "windows", true},
+		{"http any platform", "uri:http://intranet/kb", "darwin", true},
+		{"ms-settings on windows", "uri:ms-settings:windowsupdate", "windows", true},
+		{"ms-settings on mac", "uri:ms-settings:windowsupdate", "darwin", true},
+		{"ms-settings on linux", "uri:ms-settings:windowsupdate", "linux", true},
+		{"apple prefs on darwin", "uri:x-apple.systempreferences:com.apple.preference.security", "darwin", true},
+		{"apple prefs on windows", "uri:x-apple.systempreferences:com.apple.preference.security", "windows", true},
+		{"companyportal scheme", "uri:companyportal://apps", "windows", true},
+		{"slack scheme", "uri:slack://channel?team=T1&id=C1", "linux", true},
+		{"msteams scheme", "uri:msteams://teams.microsoft.com/l/chat", "windows", true},
+		{"codex scheme", "uri:codex://context?repo=example", "linux", true},
 
-		{"ms-settings on windows", "ms-settings:windowsupdate", "windows", true},
-		{"ms-settings on mac blocked", "ms-settings:windowsupdate", "darwin", false},
-		{"ms-settings on linux blocked", "ms-settings:windowsupdate", "linux", false},
+		// uri: schemes NOT in allowlist are rejected
+		{"custom scheme rejected", "uri:myapp://open", "linux", false},
+		{"smb rejected", "uri:smb://server/share", "windows", false},
+		{"file rejected", "uri:file:///etc/passwd", "linux", false},
+		{"javascript rejected", "uri:javascript:alert(1)", "darwin", false},
+		{"data rejected", "uri:data:text/html,<script>alert(1)</script>", "linux", false},
+		{"vbscript rejected", "uri:vbscript:MsgBox(1)", "windows", false},
+		{"ms-msdt rejected", "uri:ms-msdt:/id PCWDiagnostic", "windows", false},
+		{"ftp rejected", "uri:ftp://evil.com/payload", "linux", false},
+		{"ldap rejected", "uri:ldap://attacker.com", "windows", false},
+		{"ssh rejected", "uri:ssh://attacker.com", "linux", false},
+		{"telnet rejected", "uri:telnet://attacker.com", "windows", false},
+		{"mailto rejected", "uri:mailto:user@example.com", "linux", false},
+		{"tel rejected", "uri:tel:+15551234567", "darwin", false},
 
-		{"apple prefs on mac", "x-apple.systempreferences:com.apple.preference.security", "darwin", true},
-		{"apple prefs on windows blocked", "x-apple.systempreferences:com.apple.preference.security", "windows", false},
-		{"apple prefs on linux blocked", "x-apple.systempreferences:com.apple.preference.security", "linux", false},
+		// uri: allowlist is case-insensitive (scheme matching)
+		{"HTTPS allowed uppercase", "uri:HTTPS://example.com", "linux", true},
+		{"Http allowed mixed", "uri:Http://example.com", "darwin", true},
 
-		{"apple prefs with anchor", "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles", "darwin", true},
-		{"ms-settings with path", "ms-settings:windowsupdate-action", "windows", true},
+		// uri: path-like values rejected (no valid scheme)
+		{"windows drive path rejected", "uri:C:\\Windows\\System32\\calc.exe", "windows", false},
+		{"unc path rejected", "uri:\\\\server\\share", "windows", false},
+		{"unix absolute path rejected", "uri:/etc/passwd", "linux", false},
+		{"percent-encoded scheme rejected", "uri:%66ile:///etc/passwd", "linux", false},
 
-		{"ftp blocked", "ftp://evil.com/payload", "windows", false},
-		{"file blocked", "file:///etc/passwd", "linux", false},
-		{"javascript blocked", "javascript:alert(1)", "darwin", false},
+		// uri: case-insensitive prefix
+		{"URI prefix uppercase", "URI:https://example.com", "linux", true},
+		{"Uri prefix mixed", "Uri:https://example.com", "darwin", true},
+
+		// uri: edge cases
+		{"uri: empty body", "uri:", "linux", false},
+		{"uri: whitespace only", "uri:   ", "linux", false},
+
+		// action: valid verbs
+		{"action:reboot on windows", "action:reboot", "windows", true},
+		{"action:reboot on darwin", "action:reboot", "darwin", true},
+		{"action:reboot on linux", "action:reboot", "linux", true},
+		{"action:shutdown on windows", "action:shutdown", "windows", true},
+		{"action:shutdown on darwin", "action:shutdown", "darwin", true},
+		{"action:shutdown on linux", "action:shutdown", "linux", true},
+		{"action:lock on windows", "action:lock", "windows", true},
+		{"action:lock on darwin", "action:lock", "darwin", true},
+		{"action:lock on linux", "action:lock", "linux", true},
+
+		// action: case-insensitive prefix and verb
+		{"ACTION prefix uppercase", "ACTION:reboot", "linux", true},
+		{"Action prefix mixed", "Action:Reboot", "windows", true},
+
+		// action: invalid verbs
+		{"action:unknown verb", "action:restart", "linux", false},
+		{"action:empty verb", "action:", "linux", false},
+		{"action:arbitrary string", "action:rm -rf /", "linux", false},
+
+		// cmd: rejected everywhere
+		{"cmd: on windows", "cmd:shutdown /r /t 0", "windows", false},
+		{"cmd: on darwin", "cmd:osascript -e 'restart'", "darwin", false},
+		{"cmd: on linux", "cmd:systemctl reboot", "linux", false},
+		{"CMD: uppercase", "CMD:echo hello", "linux", false},
+
+		// bare schemes (no uri: prefix) rejected
+		{"bare https", "https://example.com", "linux", false},
+		{"bare http", "http://example.com", "windows", false},
+		{"bare ms-settings", "ms-settings:windowsupdate", "windows", false},
+
+		// plain values
+		{"plain value", "restart", "linux", false},
 		{"empty string", "", "windows", false},
-		{"bare path", "/tmp/foo", "linux", false},
-
-		{"case insensitive https", "HTTPS://EXAMPLE.COM", "linux", true},
-		{"case insensitive ms-settings", "MS-SETTINGS:windowsupdate", "windows", true},
-		{"case insensitive apple prefs", "X-Apple.SystemPreferences:com.apple.preference.security", "darwin", true},
-
-		{"cmd on windows", "cmd:shutdown /r /t 0", "windows", true},
-		{"cmd on mac", "cmd:osascript -e 'tell app \"Finder\" to restart'", "darwin", true},
-		{"cmd on linux", "cmd:systemctl reboot", "linux", true},
-		{"cmd case insensitive", "CMD:echo hello", "windows", true},
-		{"cmd empty command", "cmd:", "windows", false},
-		{"cmd whitespace only", "cmd:   ", "linux", false},
-		{"cmd with args", "cmd:powershell.exe -Command Get-Process", "windows", true},
-		{"cmd with pipe", "cmd:echo hello | grep hello", "linux", true},
-		{"cmd with quotes", `cmd:bash -c "echo test"`, "darwin", true},
 	}
 
 	for _, tt := range tests {
@@ -69,16 +116,19 @@ func TestClassifyOn(t *testing.T) {
 		goos  string
 		want  Kind
 	}{
-		{"https is web", "https://example.com", "linux", KindWeb},
-		{"http is web", "http://example.com", "windows", KindWeb},
-		{"ms-settings is settings", "ms-settings:windowsupdate", "windows", KindSettings},
-		{"apple prefs is settings", "x-apple.systempreferences:com.apple.preference.security", "darwin", KindSettings},
-		{"ms-settings wrong platform", "ms-settings:windowsupdate", "darwin", KindUnknown},
-		{"cmd is command", "cmd:shutdown /r /t 0", "windows", KindCommand},
-		{"cmd any platform", "cmd:echo hi", "linux", KindCommand},
-		{"cmd on mac", "cmd:open /Applications", "darwin", KindCommand},
-		{"unknown scheme", "ftp://x.com", "linux", KindUnknown},
-		{"plain value", "restart", "windows", KindUnknown},
+		{"uri:https is URI", "uri:https://example.com", "linux", KindURI},
+		{"uri:http is URI", "uri:http://example.com", "windows", KindURI},
+		{"uri:ms-settings is URI", "uri:ms-settings:windowsupdate", "windows", KindURI},
+		{"uri:unknown scheme is unknown", "uri:myapp://open", "linux", KindUnknown},
+		{"uri:file is unknown", "uri:file:///etc/passwd", "linux", KindUnknown},
+		{"action:reboot is builtin", "action:reboot", "linux", KindBuiltin},
+		{"action:shutdown is builtin", "action:shutdown", "windows", KindBuiltin},
+		{"action:lock is builtin", "action:lock", "darwin", KindBuiltin},
+		{"action:unknown is unknown", "action:restart", "linux", KindUnknown},
+		{"cmd: is unknown", "cmd:echo hi", "linux", KindUnknown},
+		{"plain value is unknown", "restart", "windows", KindUnknown},
+		{"bare https is unknown", "https://example.com", "linux", KindUnknown},
+		{"empty is unknown", "", "linux", KindUnknown},
 	}
 
 	for _, tt := range tests {
@@ -91,167 +141,38 @@ func TestClassifyOn(t *testing.T) {
 	}
 }
 
-func TestSettingsSchemes(t *testing.T) {
+func TestValidVerbs(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		goos      string
-		wantCount int
-		wantFirst string
-	}{
-		{"windows", 1, "ms-settings:"},
-		{"darwin", 1, "x-apple.systempreferences:"},
-		{"linux", 0, ""},
+	verbs := ValidVerbs()
+	if len(verbs) != 3 {
+		t.Fatalf("len(ValidVerbs()) = %d, want 3", len(verbs))
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.goos, func(t *testing.T) {
-			t.Parallel()
-			got := SettingsSchemes(tt.goos)
-			if len(got) != tt.wantCount {
-				t.Fatalf("len = %d, want %d", len(got), tt.wantCount)
-			}
-			if tt.wantCount > 0 && got[0].Prefix != tt.wantFirst {
-				t.Errorf("prefix = %q, want %q", got[0].Prefix, tt.wantFirst)
-			}
-		})
-	}
-}
-
-func TestAllSchemes(t *testing.T) {
-	t.Parallel()
-
-	win := AllSchemes("windows")
-	mac := AllSchemes("darwin")
-	lin := AllSchemes("linux")
-
-	if len(win) != 4 {
-		t.Errorf("windows schemes = %d, want 4 (https, http, ms-settings, cmd)", len(win))
-	}
-	if len(mac) != 4 {
-		t.Errorf("darwin schemes = %d, want 4 (https, http, x-apple.systempreferences, cmd)", len(mac))
-	}
-	if len(lin) != 3 {
-		t.Errorf("linux schemes = %d, want 3 (https, http, cmd)", len(lin))
-	}
-}
-
-func TestIsCommand(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		value string
-		want  bool
-	}{
-		{"cmd:echo hi", true},
-		{"CMD:echo hi", true},
-		{"Cmd:echo hi", true},
-		{"url:https://x.com", false},
-		{"restart", false},
-		{"", false},
-		{"cmd:", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.value, func(t *testing.T) {
-			t.Parallel()
-			if got := IsCommand(tt.value); got != tt.want {
-				t.Errorf("IsCommand(%q) = %v, want %v", tt.value, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestCommandString(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		value string
-		want  string
-	}{
-		{"cmd:echo hi", "echo hi"},
-		{"cmd: shutdown /r /t 0", "shutdown /r /t 0"},
-		{"cmd:  spaces  ", "spaces"},
-		{"cmd:powershell.exe -Command Get-Process", "powershell.exe -Command Get-Process"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.value, func(t *testing.T) {
-			t.Parallel()
-			if got := CommandString(tt.value); got != tt.want {
-				t.Errorf("CommandString(%q) = %q, want %q", tt.value, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestRunCommand(t *testing.T) {
-	t.Parallel()
-
-	if runtime.GOOS == "windows" {
-		t.Run("echo on windows", func(t *testing.T) {
-			t.Parallel()
-			out, err := RunCommand("cmd:echo hello")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if !strings.Contains(out, "hello") {
-				t.Errorf("output = %q, want contains 'hello'", out)
-			}
-		})
-
-		t.Run("powershell on windows", func(t *testing.T) {
-			t.Parallel()
-			out, err := RunCommand("cmd:powershell.exe -Command \"Write-Output 'test123'\"")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if !strings.Contains(out, "test123") {
-				t.Errorf("output = %q, want contains 'test123'", out)
-			}
-		})
-	} else {
-		t.Run("echo on unix", func(t *testing.T) {
-			t.Parallel()
-			out, err := RunCommand("cmd:echo hello")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if strings.TrimSpace(out) != "hello" {
-				t.Errorf("output = %q, want 'hello'", out)
-			}
-		})
-
-		t.Run("pipe on unix", func(t *testing.T) {
-			t.Parallel()
-			out, err := RunCommand("cmd:echo abc123 | grep abc")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if !strings.Contains(out, "abc123") {
-				t.Errorf("output = %q, want contains 'abc123'", out)
-			}
-		})
-
-		t.Run("args with spaces", func(t *testing.T) {
-			t.Parallel()
-			out, err := RunCommand("cmd:printf '%s %s' hello world")
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if strings.TrimSpace(out) != "hello world" {
-				t.Errorf("output = %q, want 'hello world'", out)
-			}
-		})
-	}
-
-	t.Run("bad command fails", func(t *testing.T) {
-		t.Parallel()
-		_, err := RunCommand("cmd:__nonexistent_binary_xyz__")
-		if err == nil {
-			t.Fatal("expected error for nonexistent command")
+	want := map[string]bool{"reboot": true, "shutdown": true, "lock": true}
+	for _, v := range verbs {
+		if !want[v] {
+			t.Errorf("unexpected verb %q", v)
 		}
-	})
+	}
+}
+
+func TestAllowedSchemes(t *testing.T) {
+	t.Parallel()
+
+	schemes := AllowedSchemes()
+	want := []string{
+		"https:", "http:", "ms-settings:", "x-apple.systempreferences:",
+		"slack:", "msteams:", "companyportal:", "codex:",
+	}
+	if len(schemes) != len(want) {
+		t.Fatalf("len(AllowedSchemes()) = %d, want %d", len(schemes), len(want))
+	}
+	for i, s := range schemes {
+		if s != want[i] {
+			t.Errorf("AllowedSchemes()[%d] = %q, want %q", i, s, want[i])
+		}
+	}
 }
 
 func TestDispatch(t *testing.T) {
@@ -271,43 +192,166 @@ func TestDispatch(t *testing.T) {
 		}
 	})
 
-	if runtime.GOOS != "windows" {
-		t.Run("cmd echo succeeds", func(t *testing.T) {
-			t.Parallel()
-			if err := Dispatch("cmd:echo dispatch_test"); err != nil {
-				t.Errorf("Dispatch(cmd:echo) = %v", err)
-			}
-		})
-
-		t.Run("cmd bad command fails", func(t *testing.T) {
-			t.Parallel()
-			if err := Dispatch("cmd:__nonexistent_xyz__"); err == nil {
-				t.Error("expected error for bad command")
-			}
-		})
-	}
-
-	t.Run("blocked URI returns error", func(t *testing.T) {
+	t.Run("cmd: returns error", func(t *testing.T) {
 		t.Parallel()
-		err := Dispatch("url:ftp://evil.com")
+		err := Dispatch("cmd:echo hello")
 		if err == nil {
-			t.Error("expected error for blocked URI")
+			t.Fatal("expected error for cmd: value")
 		}
-		if err != nil && !strings.Contains(err.Error(), "blocked") {
-			t.Errorf("error = %q, want contains 'blocked'", err)
+		if !strings.Contains(err.Error(), "cmd:") {
+			t.Errorf("error = %q, want contains 'cmd:'", err)
+		}
+	})
+
+	t.Run("uri: unknown scheme returns error", func(t *testing.T) {
+		t.Parallel()
+		err := Dispatch("uri:file:///etc/passwd")
+		if err == nil {
+			t.Fatal("expected error for unknown URI scheme")
+		}
+		if !strings.Contains(err.Error(), "not allowed") {
+			t.Errorf("error = %q, want contains 'not allowed'", err)
+		}
+	})
+
+	t.Run("action: invalid verb returns error", func(t *testing.T) {
+		t.Parallel()
+		err := Dispatch("action:rm -rf /")
+		if err == nil {
+			t.Fatal("expected error for unknown action verb")
+		}
+		if !strings.Contains(err.Error(), "unknown") {
+			t.Errorf("error = %q, want contains 'unknown'", err)
 		}
 	})
 }
 
-func TestRunCommandOn(t *testing.T) {
+func TestRunBuiltin(t *testing.T) {
 	t.Parallel()
 
-	// RunCommandOn with current OS should behave the same as RunCommand.
-	out, err := RunCommandOn("cmd:echo crossplatform", runtime.GOOS)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	t.Run("invalid verb returns error", func(t *testing.T) {
+		t.Parallel()
+		err := RunBuiltin("restart")
+		if err == nil {
+			t.Fatal("expected error for unknown verb")
+		}
+	})
+
+	t.Run("empty verb returns error", func(t *testing.T) {
+		t.Parallel()
+		err := RunBuiltin("")
+		if err == nil {
+			t.Fatal("expected error for empty verb")
+		}
+	})
+}
+
+func TestOpenURI(t *testing.T) {
+	t.Parallel()
+
+	t.Run("file scheme not in allowlist", func(t *testing.T) {
+		t.Parallel()
+		err := OpenURI("file:///etc/passwd")
+		if err == nil {
+			t.Fatal("expected error for file scheme")
+		}
+		if !strings.Contains(err.Error(), "not allowed") {
+			t.Errorf("error = %q, want contains 'not allowed'", err)
+		}
+	})
+
+	t.Run("empty URI returns error", func(t *testing.T) {
+		t.Parallel()
+		err := OpenURI("")
+		if err == nil {
+			t.Fatal("expected error for empty URI")
+		}
+	})
+
+	t.Run("smb not in allowlist", func(t *testing.T) {
+		t.Parallel()
+		err := OpenURI("smb://server/share")
+		if err == nil {
+			t.Fatal("expected error for smb scheme")
+		}
+	})
+
+	t.Run("path-like value rejected", func(t *testing.T) {
+		t.Parallel()
+		err := OpenURI("C:\\Windows\\System32\\calc.exe")
+		if err == nil {
+			t.Fatal("expected error for path-like value")
+		}
+	})
+}
+
+func TestIsURI(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		value string
+		want  bool
+	}{
+		{"uri:https://example.com", true},
+		{"URI:https://example.com", true},
+		{"Uri:ms-settings:windowsupdate", true},
+		{"uri:", true},
+		{"url:https://example.com", false},
+		{"cmd:echo hi", false},
+		{"action:reboot", false},
+		{"restart", false},
+		{"", false},
 	}
-	if !strings.Contains(out, "crossplatform") {
-		t.Errorf("output = %q, want contains 'crossplatform'", out)
+
+	for _, tt := range tests {
+		t.Run(tt.value, func(t *testing.T) {
+			t.Parallel()
+			if got := IsURI(tt.value); got != tt.want {
+				t.Errorf("IsURI(%q) = %v, want %v", tt.value, got, tt.want)
+			}
+		})
 	}
+}
+
+func TestIsBuiltin(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		value string
+		want  bool
+	}{
+		{"action:reboot", true},
+		{"ACTION:REBOOT", true},
+		{"action:shutdown", true},
+		{"action:lock", true},
+		{"action:restart", true},
+		{"action:", true},
+		{"cmd:echo", false},
+		{"uri:https://example.com", false},
+		{"restart", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.value, func(t *testing.T) {
+			t.Parallel()
+			if got := IsBuiltin(tt.value); got != tt.want {
+				t.Errorf("IsBuiltin(%q) = %v, want %v", tt.value, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNoShellExecution(t *testing.T) {
+	t.Parallel()
+
+	t.Run("cmd prefix functions removed", func(t *testing.T) {
+		t.Parallel()
+		if ClassifyOn("cmd:echo hello", runtime.GOOS) != KindUnknown {
+			t.Error("cmd: should classify as KindUnknown")
+		}
+		if AllowedOn("cmd:echo hello", runtime.GOOS) {
+			t.Error("cmd: should not be allowed")
+		}
+	})
 }

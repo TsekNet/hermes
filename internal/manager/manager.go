@@ -251,9 +251,13 @@ func (m *Manager) ReportChoice(id, value string) bool {
 		return false
 	}
 
-	// Deferral handling.
 	if strings.HasPrefix(value, "defer") {
 		return m.handleDeferLocked(n, value)
+	}
+
+	if !n.Config.HasValue(value) {
+		deck.Warningf("manager: rejecting unknown value %q for %s", value, id)
+		return false
 	}
 
 	return m.completeLocked(n, value)
