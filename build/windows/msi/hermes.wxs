@@ -30,6 +30,20 @@
       </Directory>
     </StandardDirectory>
 
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="HermesMenuFolder" Name="Hermes">
+        <Component Id="HermesStartMenu" Guid="F6A7B8C9-D012-3456-EF01-789012CDEF01">
+          <Shortcut Id="InboxShortcut" Name="Hermes Notifications"
+                    Description="View notification history"
+                    Target="[#HermesExeFile]" Arguments="inbox"
+                    WorkingDirectory="HermesDir" Icon="HermesIcon" IconIndex="0" />
+          <RemoveFolder Id="RemoveHermesMenuFolder" On="uninstall" />
+          <RegistryValue Root="HKCU" Key="Software\TsekNet\Hermes"
+                         Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
     <!-- Deferred custom actions: property ID must match custom action ID -->
     <SetProperty Id="StopHermes" Value="&quot;[#HermesExeFile]&quot; stop"
       Before="StopHermes" Sequence="execute" />
@@ -56,6 +70,7 @@
       <ComponentRef Id="HermesExe" />
       <ComponentRef Id="HermesAutostart" />
       <ComponentRef Id="CleanupDir" />
+      <ComponentRef Id="HermesStartMenu" />
     </Feature>
   </Package>
 </Wix>

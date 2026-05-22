@@ -44,6 +44,16 @@ hermes inbox --db my.db   # Read directly from a bolt DB file (skip service)
 
 The inbox connects to the running service via gRPC. If the service is unreachable, it falls back to reading the bolt database directly. History is auto-pruned on service startup: records older than 30 days or exceeding 50 entries are removed.
 
+### App launcher shortcut
+
+Platform installers create a **Hermes Notifications** shortcut so users can find the inbox without knowing the CLI:
+
+| Platform | Location | Search keywords |
+|---|---|---|
+| Windows | Start Menu > Hermes > Hermes Notifications | "hermes", "notifications" |
+| macOS | /Applications/Hermes Notifications.app | Spotlight: "hermes", "notifications" |
+| Linux | GNOME Activities / KDE krunner | "hermes", "notifications", "alerts", "history" |
+
 ---
 
 ## Local mode
