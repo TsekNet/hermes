@@ -128,6 +128,11 @@ func (a *App) Ready() {
 
 // Respond handles the user's choice. Opens URIs, runs builtins, sends gRPC, quits.
 func (a *App) Respond(value string) {
+	if !a.cfg.HasValue(value) && !action.IsURI(value) && !action.IsBuiltin(value) {
+		deck.Warningf("respond: rejected unknown value %q", value)
+		return
+	}
+
 	if action.IsURI(value) {
 		a.openURI(value[len("uri:"):])
 		return

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"net/url"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -375,13 +376,8 @@ func (c *NotificationConfig) SanitizeText() {
 	}
 }
 
-// safeEscape applies html.EscapeString only if the string does not already
-// contain HTML entities, preventing double-escaping on repeated calls.
 func safeEscape(s string) string {
-	if strings.Contains(s, "&amp;") || strings.Contains(s, "&lt;") || strings.Contains(s, "&gt;") || strings.Contains(s, "&#") {
-		return s
-	}
-	return html.EscapeString(s)
+	return html.EscapeString(html.UnescapeString(s))
 }
 
 // Validate checks that required fields are present and values are safe.
@@ -436,8 +432,10 @@ func (c *NotificationConfig) Validate() error {
 		errs = append(errs, fmt.Sprintf("watch_paths: %d exceeds maximum of 5", len(c.WatchPaths)))
 	}
 	for i, p := range c.WatchPaths {
-		if strings.Contains(p, "..") {
-			errs = append(errs, fmt.Sprintf("watch_paths[%d]: path traversal (..) is not allowed", i))
+		if !filepath.IsAbs(p) {
+			errs = append(errs, fmt.Sprintf("watch_paths[%d]: must be an absolute path", i))
+		} else if cleaned := filepath.Clean(p); cleaned != p {
+			errs = append(errs, fmt.Sprintf("watch_paths[%d]: path must be clean (got %q, want %q)", i, p, cleaned))
 		}
 	}
 	if c.Priority < 0 || c.Priority > 10 {

@@ -67,7 +67,8 @@ func Listen(path string) (net.Listener, error) {
 		return nil, fmt.Errorf("hermes is already running (socket %s)", path)
 	}
 
-	// Stale socket: remove and retry.
+	// Stale socket: remove and retry. The parent directory is 0700, so only
+	// same-user processes can race this window.
 	os.Remove(path)
 	lis, err = net.Listen("unix", path)
 	if err != nil {

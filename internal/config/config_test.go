@@ -428,7 +428,8 @@ func TestValidate_WatchPaths(t *testing.T) {
 		{name: "nil", paths: nil},
 		{name: "valid paths", paths: []string{"/tmp/receipt", "/var/log/install.log"}},
 		{name: "exactly at limit", paths: []string{"/a", "/b", "/c", "/d", "/e"}},
-		{name: "path traversal blocked", paths: []string{"/tmp/../etc/passwd"}, wantErr: true, errSubstr: "path traversal"},
+		{name: "path traversal blocked", paths: []string{"/tmp/../etc/passwd"}, wantErr: true, errSubstr: "must be clean"},
+		{name: "relative path blocked", paths: []string{"tmp/receipt"}, wantErr: true, errSubstr: "must be an absolute path"},
 		{name: "too many paths", paths: make([]string, 6), wantErr: true, errSubstr: "exceeds maximum"},
 	}
 

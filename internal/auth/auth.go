@@ -86,8 +86,7 @@ func tokenPath() string {
 }
 
 // UnaryInterceptor returns a gRPC unary server interceptor that validates
-// the session token from metadata. Read-only RPCs accept the token
-// regardless; write RPCs require the full token.
+// the session token from metadata.
 func UnaryInterceptor(token string) grpc.UnaryServerInterceptor {
 	tokenBytes := []byte(token)
 	return func(
