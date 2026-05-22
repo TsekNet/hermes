@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/TsekNet/hermes/internal/client"
 	"github.com/TsekNet/hermes/internal/config"
@@ -96,7 +97,7 @@ func broadcastNotify(cfg *config.NotificationConfig, args []string) error {
 		if err != nil {
 			return err
 		}
-		defer os.Remove(f)
+		defer os.RemoveAll(filepath.Dir(f))
 		notifyArgs = append(notifyArgs, "--config", f)
 	}
 
@@ -110,18 +111,15 @@ func writeTempConfig(cfg *config.NotificationConfig) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("marshal config for broadcast: %w", err)
 	}
-	f, err := os.CreateTemp("", "hermes-broadcast-*.json")
+	dir, err := os.MkdirTemp("", "hermes-broadcast-*")
 	if err != nil {
-		return "", fmt.Errorf("create temp config: %w", err)
+		return "", fmt.Errorf("create temp dir: %w", err)
 	}
-	if _, err := f.Write(data); err != nil {
-		f.Close()
-		os.Remove(f.Name())
+	os.Chmod(dir, 0711)
+	path := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		os.RemoveAll(dir)
 		return "", fmt.Errorf("write temp config: %w", err)
 	}
-	f.Close()
-	// Make readable by all users so child processes in other sessions
-	// (launched via CreateProcessAsUser / setuid) can read the config.
-	os.Chmod(f.Name(), 0644)
-	return f.Name(), nil
+	return path, nil
 }

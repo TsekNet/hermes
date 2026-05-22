@@ -68,9 +68,10 @@ func isSSHSession() bool {
 func sanitize(s string) string {
 	var b strings.Builder
 	for _, r := range s {
-		if r >= 0x20 && r != 0x7f {
-			b.WriteRune(r)
+		if r < 0x20 || r == 0x7f || (r >= 0x80 && r <= 0x9f) {
+			continue
 		}
+		b.WriteRune(r)
 	}
 	return b.String()
 }
