@@ -14,6 +14,7 @@ import (
 	"github.com/TsekNet/hermes/internal/manager"
 	"github.com/TsekNet/hermes/internal/ratelimit"
 	"github.com/TsekNet/hermes/internal/server"
+	"github.com/TsekNet/hermes/internal/socket"
 	"github.com/TsekNet/hermes/internal/store"
 	"github.com/TsekNet/hermes/internal/tray"
 	"github.com/google/deck"
@@ -22,7 +23,6 @@ import (
 )
 
 var (
-	flagPort   int
 	flagDB     string
 	flagNoTray bool
 )
@@ -41,13 +41,21 @@ Deferral state is persisted to a local bolt database so notifications survive
 service restarts.`,
 		RunE: runServe,
 	}
-	cmd.Flags().IntVar(&flagPort, "port", server.DefaultPort, "gRPC listen port")
 	cmd.Flags().StringVar(&flagDB, "db", "", "bolt database path (default: platform-specific)")
 	cmd.Flags().BoolVar(&flagNoTray, "no-tray", false, "disable system tray icon")
 	return cmd
 }
 
 func runServe(_ *cobra.Command, _ []string) error {
+	sockPath := socket.Path()
+
+	lis, err := socket.Listen(sockPath)
+	if err != nil {
+		return err
+	}
+	defer lis.Close()
+	defer socket.Cleanup(sockPath)
+
 	s, err := store.Open(flagDB)
 	if err != nil {
 		return fmt.Errorf("open store: %w", err)
@@ -78,7 +86,7 @@ func runServe(_ *cobra.Command, _ []string) error {
 	interceptors = append(interceptors, auth.UnaryInterceptor(token))
 	interceptors = append(interceptors, rl.UnaryInterceptor())
 
-	srv := server.New(mgr, flagPort, interceptors...)
+	srv := server.New(mgr, interceptors...)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -88,16 +96,11 @@ func runServe(_ *cobra.Command, _ []string) error {
 	useTray := !flagNoTray && tray.ShouldEnable(runtime.GOOS, os.Getenv)
 
 	if useTray {
-		deck.Infof("hermes service starting on port %d with tray icon (per-user daemon, pid %d)", flagPort, os.Getpid())
+		deck.Infof("hermes service starting on %s with tray icon (per-user daemon, pid %d)", sockPath, os.Getpid())
 
-		// gRPC server runs in a goroutine; main goroutine owns the tray
-		// event loop (required by macOS Cocoa for the menu bar).
 		errCh := make(chan error, 1)
-		go func() { errCh <- srv.Serve() }()
+		go func() { errCh <- srv.Serve(lis) }()
 
-		// trayReady is closed by tray.Run's onReady callback. The
-		// shutdown goroutine waits on it so tray.Quit() is never
-		// called before systray.Run() has initialized.
 		trayReady := make(chan struct{})
 		go func() {
 			<-trayReady
@@ -117,18 +120,16 @@ func runServe(_ *cobra.Command, _ []string) error {
 		tray.Run(tray.Config{
 			Count: mgr.ActiveCount,
 			Stop:  srv.Stop,
-			Port:  flagPort,
 			Ready: trayReady,
 		})
 
 		return nil
 	}
 
-	// No tray: original behavior, gRPC blocks the main goroutine.
 	if flagNoTray {
-		deck.Infof("hermes service starting on port %d (tray disabled, per-user daemon, pid %d)", flagPort, os.Getpid())
+		deck.Infof("hermes service starting on %s (tray disabled, per-user daemon, pid %d)", sockPath, os.Getpid())
 	} else {
-		deck.Infof("hermes service starting on port %d (no display server, tray skipped, per-user daemon, pid %d)", flagPort, os.Getpid())
+		deck.Infof("hermes service starting on %s (no display server, tray skipped, per-user daemon, pid %d)", sockPath, os.Getpid())
 	}
 
 	go func() {
@@ -137,7 +138,7 @@ func runServe(_ *cobra.Command, _ []string) error {
 		srv.Stop()
 	}()
 
-	return srv.Serve()
+	return srv.Serve(lis)
 }
 
 // drainDelay is the breathing room between queued notifications so the
@@ -257,7 +258,7 @@ func reshowNotification(n *manager.Notification) {
 		return
 	}
 
-	args := []string{"--notification-id", n.ID, "--service-port", fmt.Sprintf("%d", flagPort)}
+	args := []string{"--notification-id", n.ID}
 	if err := launchSubprocess(selfPath, args); err != nil {
 		deck.Errorf("notification: reshow id=%s error=%q", n.ID, err)
 		return

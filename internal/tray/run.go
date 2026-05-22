@@ -19,7 +19,6 @@ type StopFunc func()
 type Config struct {
 	Count CountFunc
 	Stop  StopFunc
-	Port  int
 	Ready chan<- struct{} // closed when the tray is initialized; nil = no signal
 	done  chan struct{}
 }
@@ -54,7 +53,7 @@ func onReady(cfg Config) {
 	for {
 		select {
 		case <-mInbox.ClickedCh:
-			launchInbox(cfg.Port)
+			launchInbox()
 		case <-mQuit.ClickedCh:
 			deck.Info("tray: quit requested by user")
 			if cfg.Stop != nil {
@@ -84,14 +83,14 @@ func pollCount(countFn CountFunc, mInbox *systray.MenuItem, done <-chan struct{}
 // launchInbox starts the inbox UI as a detached subprocess.
 // Uses os.Executable to avoid PATH injection (red team: attacker-controlled
 // PATH could plant a malicious "hermes" binary).
-func launchInbox(port int) {
+func launchInbox() {
 	selfPath, err := os.Executable()
 	if err != nil {
 		deck.Errorf("tray: cannot determine executable path: %v", err)
 		return
 	}
 
-	args := InboxArgs(port)
+	args := InboxArgs()
 	cmd := exec.Command(selfPath, args...)
 	detachProcess(cmd)
 
@@ -99,7 +98,7 @@ func launchInbox(port int) {
 		deck.Errorf("tray: launch inbox: %v", err)
 		return
 	}
-	deck.Infof("tray: launched inbox (pid %d, port %d)", cmd.Process.Pid, port)
+	deck.Infof("tray: launched inbox (pid %d)", cmd.Process.Pid)
 }
 
 // detachProcess is implemented in detach_unix.go / detach_windows.go.

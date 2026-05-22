@@ -10,10 +10,9 @@ import (
 
 	"github.com/TsekNet/hermes/internal/auth"
 	"github.com/TsekNet/hermes/internal/config"
-	"github.com/TsekNet/hermes/internal/server"
+	"github.com/TsekNet/hermes/internal/socket"
 	pb "github.com/TsekNet/hermes/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Client wraps a gRPC connection to the hermes service.
@@ -22,24 +21,23 @@ type Client struct {
 	svc  pb.HermesServiceClient
 }
 
-// Dial connects to the hermes gRPC service on localhost.
+// Dial connects to the hermes gRPC service via Unix domain socket.
 // It auto-loads the session token from disk for authentication.
-func Dial(port int) (*Client, error) {
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if token, err := auth.LoadToken(); err == nil && token != "" {
-		opts = append(opts, grpc.WithPerRPCCredentials(&auth.PerRPCCredentials{Token: token}))
-	}
-	conn, err := grpc.NewClient(addr, opts...)
-	if err != nil {
-		return nil, fmt.Errorf("grpc dial %s: %w", addr, err)
-	}
-	return &Client{conn: conn, svc: pb.NewHermesServiceClient(conn)}, nil
+func Dial() (*Client, error) {
+	return DialPath(socket.Path())
 }
 
-// DialDefault connects using the default port.
-func DialDefault() (*Client, error) {
-	return Dial(server.DefaultPort)
+// DialPath connects to the hermes gRPC service at the given socket path.
+func DialPath(sockPath string) (*Client, error) {
+	var extraOpts []grpc.DialOption
+	if token, err := auth.LoadToken(); err == nil && token != "" {
+		extraOpts = append(extraOpts, grpc.WithPerRPCCredentials(&auth.PerRPCCredentials{Token: token}))
+	}
+	conn, err := socket.Dial(sockPath, extraOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{conn: conn, svc: pb.NewHermesServiceClient(conn)}, nil
 }
 
 // Close closes the underlying connection.

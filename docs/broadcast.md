@@ -25,7 +25,7 @@ Hermes reuses the same session launch machinery as `hermes install`:
 | Linux | `/run/user/<uid>` scan + `SysProcAttr.Credential` |
 | macOS | `/Users` scan + `SysProcAttr.Credential` |
 
-Each child process runs in the user's context with access to the per-user auth token (`session.token`) and daemon on `127.0.0.1:4770`.
+Each child process runs in the user's context with access to the per-user auth token (`session.token`) and daemon socket.
 
 ---
 

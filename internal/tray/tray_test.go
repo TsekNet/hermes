@@ -95,31 +95,15 @@ func TestShouldEnable(t *testing.T) {
 
 func TestInboxArgs(t *testing.T) {
 	t.Parallel()
-
-	tests := []struct {
-		name     string
-		selfPath string
-		port     int
-		want     []string
-	}{
-		{"default port", "/usr/local/bin/hermes", 4770, []string{"inbox", "--port", "4770"}},
-		{"custom port", "/opt/hermes/hermes", 5000, []string{"inbox", "--port", "5000"}},
-		{"windows path", `C:\Program Files\Hermes\hermes.exe`, 4770, []string{"inbox", "--port", "4770"}},
+	got := InboxArgs()
+	want := []string{"inbox"}
+	if len(got) != len(want) {
+		t.Fatalf("InboxArgs() len = %d, want %d", len(got), len(want))
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			got := InboxArgs(tt.port)
-			if len(got) != len(tt.want) {
-				t.Fatalf("InboxArgs(%d) len = %d, want %d", tt.port, len(got), len(tt.want))
-			}
-			for i := range got {
-				if got[i] != tt.want[i] {
-					t.Errorf("InboxArgs(%d)[%d] = %q, want %q", tt.port, i, got[i], tt.want[i])
-				}
-			}
-		})
+	for i := range got {
+		if got[i] != want[i] {
+			t.Errorf("InboxArgs()[%d] = %q, want %q", i, got[i], want[i])
+		}
 	}
 }
 

@@ -59,8 +59,7 @@ func ShouldEnable(goos string, envLookup func(string) string) bool {
 	}
 }
 
-// InboxArgs returns the command-line arguments for launching the inbox
-// subprocess. The caller provides the port to connect to the service.
-func InboxArgs(port int) []string {
-	return []string{"inbox", "--port", fmt.Sprintf("%d", port)}
+// InboxArgs returns the command-line arguments for launching the inbox subprocess.
+func InboxArgs() []string {
+	return []string{"inbox"}
 }
