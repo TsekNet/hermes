@@ -54,6 +54,8 @@ Platform installers create a **Hermes Notifications** shortcut so users can find
 | macOS | /Applications/Hermes Notifications.app | Spotlight: "hermes", "notifications" |
 | Linux | GNOME Activities / KDE krunner | "hermes", "notifications", "alerts", "history" |
 
+On Windows, the shortcut uses `conhost --headless` to suppress the console window that would otherwise appear because the binary is built with `-windowsconsole` for CLI compatibility.
+
 ---
 
 ## Local mode
