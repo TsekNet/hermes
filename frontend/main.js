@@ -372,13 +372,31 @@
 
   function initWatchStatus() {
     var el = document.getElementById("watch-status");
-    el.style.display = "block";
-    el.textContent = "Monitoring filesystem...";
+    el.style.display = "flex";
+
+    var dots = document.createElement("span");
+    dots.className = "watch-dots";
+    for (var i = 0; i < 3; i++) {
+      var dot = document.createElement("span");
+      dot.className = "watch-dot";
+      dots.appendChild(dot);
+    }
+    el.appendChild(dots);
+
+    var text = document.createElement("span");
+    text.className = "watch-text";
+    text.textContent = "Monitoring filesystem...";
+    el.appendChild(text);
 
     if (window.runtime && window.runtime.EventsOn) {
+      var resetTimer = null;
       window.runtime.EventsOn("fs:event", function(ev) {
         var basename = ev.path.split("/").pop().split("\\").pop();
-        el.textContent = ev.op + ": " + basename;
+        text.textContent = ev.op + ": " + basename;
+        if (resetTimer) clearTimeout(resetTimer);
+        resetTimer = setTimeout(function() {
+          text.textContent = "Monitoring filesystem...";
+        }, 3000);
       });
     }
   }
