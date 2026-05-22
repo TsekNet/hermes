@@ -40,7 +40,7 @@ func onReady(cfg Config) {
 	systray.SetTitle("")
 	systray.SetTooltip(FormatTooltip(0))
 
-	mInbox := systray.AddMenuItem("Open Inbox", "View notification history")
+	mInbox := systray.AddMenuItem("Notification History", "View notification history")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit Hermes", "Stop the notification service")
 
@@ -66,6 +66,7 @@ func onReady(cfg Config) {
 }
 
 func pollCount(countFn CountFunc, mInbox *systray.MenuItem, done <-chan struct{}) {
+	base := iconData
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 	for {
@@ -76,6 +77,7 @@ func pollCount(countFn CountFunc, mInbox *systray.MenuItem, done <-chan struct{}
 			count := countFn()
 			systray.SetTooltip(FormatTooltip(count))
 			mInbox.SetTitle(FormatInboxLabel(count))
+			systray.SetIcon(BadgeIcon(base, count))
 		}
 	}
 }

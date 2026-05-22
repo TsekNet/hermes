@@ -34,7 +34,7 @@ hermes inbox --json
 
 ## Inbox (notification history)
 
-Completed notifications are automatically saved to the history bucket. The inbox lets you review past notifications and their outcomes.
+The inbox shows all notifications: active items that need your attention appear at the top with inline action buttons, completed notifications appear below in a grayed-out style. Clicking an inline button (e.g. "Restart Now") sends the response to the service and immediately grays out the card. The inbox polls for updates every 3 seconds, so actions taken in popup windows are reflected automatically.
 
 ```bash
 hermes inbox              # Opens the inbox UI

@@ -40,7 +40,7 @@ See **[Architecture — Deployment](architecture.md#deployment)** for detail.
 
 ## SSH-only users
 
-Users who connect via SSH without a desktop session won't see the Wails UI. The installers include a login banner that shows pending notification summaries on shell login:
+Users who connect via SSH without a desktop session won't see the Wails UI. The installers include a login banner that shows notification summaries on shell login:
 
 | Platform | Mechanism |
 |----------|-----------|
@@ -48,4 +48,4 @@ Users who connect via SSH without a desktop session won't see the Wails UI. The 
 | macOS | `/etc/profile.d/hermes-motd.sh` (installed by .pkg; postinstall ensures zsh sources profile.d) |
 | Windows | Guarded one-liner in `$PROFILE.AllUsersAllHosts` (installed by MSI) |
 
-The banner only appears for SSH sessions (detected via `$SSH_CLIENT` / `$SSH_TTY` on Unix, `$env:SSH_CLIENT` / `$env:SSH_CONNECTION` on Windows). It runs `hermes inbox --json` and prints a summary. Silent when there are no pending notifications. Run `hermes inbox` for full details.
+The banner only appears for SSH sessions (detected via `$SSH_CLIENT` / `$SSH_TTY` on Unix, `$env:SSH_CLIENT` / `$env:SSH_CONNECTION` on Windows). It runs `hermes inbox --json` and prints a summary. Silent when there are no notifications needing attention. Run `hermes inbox` for full details.

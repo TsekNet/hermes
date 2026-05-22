@@ -579,6 +579,51 @@ func TestActiveCount(t *testing.T) {
 	}
 }
 
+func TestListForInbox(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		submit     int
+		complete   int
+		wantActive int
+	}{
+		{"empty", 0, 0, 0},
+		{"two active", 2, 0, 2},
+		{"one active one done", 2, 1, 1},
+		{"all done", 2, 2, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			mgr := New(nil, nil)
+
+			var ids []string
+			for i := 0; i < tt.submit; i++ {
+				id, _ := mgr.Submit(testConfig("Inbox"))
+				ids = append(ids, id)
+			}
+			for i := 0; i < tt.complete && i < len(ids); i++ {
+				mgr.ReportChoice(ids[i], "ok")
+			}
+
+			records := mgr.ListForInbox()
+			activeCount := 0
+			for _, r := range records {
+				if r.ResponseValue == "" && r.CompletedAt.IsZero() {
+					activeCount++
+					if r.Config == nil {
+						t.Error("active record should have Config set")
+					}
+				}
+			}
+			if activeCount != tt.wantActive {
+				t.Errorf("active records = %d, want %d", activeCount, tt.wantActive)
+			}
+		})
+	}
+}
+
 func TestExitCodes(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

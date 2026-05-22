@@ -20,7 +20,7 @@ The notification UI is a web page, not a native dialog. HTML, CSS, and JavaScrip
 
 hermes runs as a **per-user** service daemon (`hermes serve`) in the user's desktop session. Because it's already in the user's session, it launches webviews directly — no privilege escalation or session-crossing tools needed.
 
-When a display server is available, the service shows a **system tray icon** (Windows notification area, macOS menu bar, Linux StatusNotifierItem). The tray provides at-a-glance pending notification count and quick access to the inbox UI. On headless systems or when started with `--no-tray`, the service runs without a tray icon.
+When a display server is available, the service shows a **system tray icon** (Windows notification area, macOS menu bar, Linux StatusNotifierItem). The tray provides at-a-glance count of notifications needing attention and quick access to the notification history. The menu item reads "Notification History (N)" where N is the number of active notifications requiring user action. When notifications are active, the tray icon displays a red badge overlay with the count (1-10, or "10+"). The badge is composited at runtime from the embedded PNG icon using `image/draw`, then encoded in the platform's native format (ICO on Windows, PNG elsewhere). On headless systems or when started with `--no-tray`, the service runs without a tray icon.
 
 ```mermaid
 sequenceDiagram
@@ -186,6 +186,8 @@ Override with `hermes serve --db /path/to/hermes.db`.
 ### History
 
 When a notification completes (user action, timeout, or cancellation), the manager saves a `HistoryRecord` to a separate `history` bbolt bucket. This powers the inbox feature (`hermes inbox`).
+
+The `ListHistory` RPC returns both active and completed notifications. Active notifications are prepended with `config_json` set (same serialization as `GetUIConfig`) and sentinel values (empty `response_value`, zero `completed_unix`). The inbox frontend uses these sentinels to distinguish active items (shown with inline action buttons and full color) from completed items (grayed out). The inbox polls every 3 seconds to detect state changes from popup interactions.
 
 On startup, the service prunes history records older than 30 days or exceeding 50 entries. The `PruneHistory` method enforces both age and count limits in a single pass.
 
@@ -405,7 +407,8 @@ JS communicates with Go through Wails runtime bindings:
 - `OpenHelp()` — open help URL in system browser
 
 **Inbox view (`InboxApp`):**
-- `GetHistory()` — return completed notification entries
+- `GetHistory()` — return notification entries (active items first with inline buttons, then completed)
+- `RespondToNotification(id, value)` — send a user choice for an active notification from the inbox
 - `RunAction(id, value)` — re-execute a `uri:` or `action:` button from history
 - `Ready()` — center and show the inbox window
 

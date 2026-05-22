@@ -133,6 +133,10 @@ message HistoryEntry {
   string response_value = 5;
   int64 created_unix = 6;
   int64 completed_unix = 7;
+  // JSON-encoded NotificationConfig for active notifications.
+  // Present when the notification still needs user action (inline buttons).
+  // Empty for completed notifications.
+  bytes config_json = 8;
 }
 
 // --- Shutdown ---

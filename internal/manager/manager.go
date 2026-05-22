@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -327,6 +328,30 @@ func (m *Manager) ListHistory() []*store.HistoryRecord {
 		return nil
 	}
 	return records
+}
+
+// ListForInbox returns active notifications as HistoryRecords with sentinel
+// values (empty ResponseValue, zero CompletedAt) so the inbox UI can render
+// them alongside completed history. Active items are sorted newest first.
+func (m *Manager) ListForInbox() []*store.HistoryRecord {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var out []*store.HistoryRecord
+	for _, n := range m.active {
+		if n.State == StateDone {
+			continue
+		}
+		out = append(out, &store.HistoryRecord{
+			ID:        n.ID,
+			Config:    n.Config,
+			CreatedAt: n.CreatedAt,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].CreatedAt.After(out[j].CreatedAt)
+	})
+	return out
 }
 
 // NotificationInfo is a read-only snapshot for the List RPC.
