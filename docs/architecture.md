@@ -30,7 +30,7 @@ sequenceDiagram
     participant UI as Webview (user session)
 
     Service->>Tray: Show icon + pending count
-    Script->>Service: gRPC Notify on localhost:4770
+    Script->>Service: gRPC Notify via Unix domain socket
     Service->>UI: Launch webview directly (same session)
     UI->>Service: gRPC ReportChoice
     Service->>Script: Notify RPC returns result
@@ -266,7 +266,15 @@ The `internal/` packages import only Go stdlib and each other — no Wails depen
 
 ## gRPC transport
 
-All IPC uses gRPC over TCP on `127.0.0.1:4770` (configurable via `--port`). No TLS — localhost only. The service binds to the loopback interface exclusively.
+All IPC uses gRPC over a Unix domain socket (`AF_UNIX`). No TLS, no TCP ports. The socket path is platform-specific:
+
+| Platform | Socket path |
+|----------|-------------|
+| Windows  | `%LOCALAPPDATA%\hermes\hermes.sock` |
+| macOS    | `~/.hermes/hermes.sock` |
+| Linux    | `$XDG_RUNTIME_DIR/hermes/hermes.sock` (or `~/.hermes/hermes.sock`) |
+
+UDS is invisible to port scanners and eliminates port collisions in multi-user environments. The socket file is created with `0600` permissions on Unix (Windows `AF_UNIX` does not enforce filesystem permissions, so the auth token provides defense in depth).
 
 ### Authentication
 
@@ -358,7 +366,7 @@ Then enable: `systemctl --user enable --now hermes.service`
 
 ### Multi-user machines
 
-Each user runs their own `hermes serve` on the default port. Only one instance can bind port 4770 per user (loopback). For concurrent multi-user sessions on the same machine, configure different ports via `--port`.
+Each user runs their own `hermes serve` with a per-user Unix domain socket. Socket paths are derived from user-specific directories (`$XDG_RUNTIME_DIR`, `%LOCALAPPDATA%`), so multiple users on the same machine never collide. No port configuration needed.
 
 ---
 

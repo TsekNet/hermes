@@ -6,7 +6,7 @@ Cross-platform notification daemon: per-user gRPC service + Wails v2 webview UI.
 
 Read `docs/architecture.md` for the full design. Key facts for code changes:
 
-- Service model: `hermes serve` runs per-user, gRPC on `127.0.0.1:4770`. CLI and Wails UI are gRPC clients
+- Service model: `hermes serve` runs per-user, gRPC over Unix domain socket. CLI and Wails UI are gRPC clients
 - Config format: `docs/usage.md`. Subcommands, flags, exit codes also documented there
 - Platform details: `docs/platforms.md`. Build/test workflow: `docs/development.md`
 

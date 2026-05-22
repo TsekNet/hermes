@@ -17,7 +17,6 @@ import (
 	"github.com/TsekNet/hermes/internal/config"
 	"github.com/TsekNet/hermes/internal/dnd"
 	"github.com/TsekNet/hermes/internal/exitcodes"
-	"github.com/TsekNet/hermes/internal/server"
 	"github.com/TsekNet/hermes/internal/store"
 	"github.com/google/deck"
 	"github.com/spf13/cobra"
@@ -36,7 +35,6 @@ var (
 	flagConfig         string
 	flagLocale         string
 	flagNotificationID string
-	flagServicePort    int
 )
 
 // Execute is the single entry point called from main.
@@ -79,11 +77,9 @@ Use '--config' or '--local' to render directly without the service.`,
 	f.StringVar(&flagConfig, "config", "", "config file or inline JSON/YAML")
 	f.StringVar(&flagLocale, "locale", "", "override locale for localized notifications (e.g. ja, de, es)")
 
-	// Hidden flags — set by the service when launching UI subprocesses.
+	// Hidden flag — set by the service when launching UI subprocesses.
 	f.StringVar(&flagNotificationID, "notification-id", "", "notification ID (set by service)")
-	f.IntVar(&flagServicePort, "service-port", server.DefaultPort, "gRPC service port (set by service)")
 	f.MarkHidden("notification-id")
-	f.MarkHidden("service-port")
 
 	root.AddCommand(demoCmd())
 	root.AddCommand(versionCmd())
@@ -103,7 +99,7 @@ Use '--config' or '--local' to render directly without the service.`,
 func runRoot(_ *cobra.Command, args []string) error {
 	// Mode 1: UI subprocess launched by the service (gRPC).
 	if flagNotificationID != "" {
-		return runServiceUI(flagNotificationID, flagServicePort)
+		return runServiceUI(flagNotificationID)
 	}
 
 	// Resolve config from --config flag, positional arg, or stdin.
@@ -154,7 +150,7 @@ func runDemo() error {
 // sendToService sends a config to the gRPC service and blocks for the result.
 // If the service is unreachable, it falls back to the offline queue.
 func sendToService(cfg *config.NotificationConfig) error {
-	c, err := client.DialDefault()
+	c, err := client.Dial()
 	if err != nil {
 		if tryEnqueue(cfg, err) {
 			return nil
@@ -210,8 +206,8 @@ func printResultAndExit(r *client.NotifyResult) {
 
 // runServiceUI is Mode 1: the service spawned this process with a notification ID.
 // It fetches config from the service via gRPC, renders the UI, and reports back.
-func runServiceUI(notifID string, port int) error {
-	c, err := client.Dial(port)
+func runServiceUI(notifID string) error {
+	c, err := client.Dial()
 	if err != nil {
 		return fmt.Errorf("connect to service: %w", err)
 	}

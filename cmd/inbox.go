@@ -8,7 +8,6 @@ import (
 
 	"github.com/TsekNet/hermes/internal/app"
 	"github.com/TsekNet/hermes/internal/client"
-	"github.com/TsekNet/hermes/internal/server"
 	"github.com/TsekNet/hermes/internal/store"
 	"github.com/google/deck"
 	"github.com/spf13/cobra"
@@ -20,7 +19,6 @@ import (
 
 func inboxCmd() *cobra.Command {
 	var (
-		port   int
 		asJSON bool
 		dbPath string
 	)
@@ -34,19 +32,18 @@ action (uri: opens the URI, action: runs the built-in verb).`,
   hermes inbox --json`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			if asJSON {
-				return printInboxJSON(port, dbPath)
+				return printInboxJSON(dbPath)
 			}
-			return runInboxUI(port, dbPath)
+			return runInboxUI(dbPath)
 		},
 	}
-	cmd.Flags().IntVar(&port, "port", server.DefaultPort, "service gRPC port")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "print history as JSON to stdout")
 	cmd.Flags().StringVar(&dbPath, "db", "", "read directly from bolt DB (skip service)")
 	return cmd
 }
 
-func printInboxJSON(port int, dbPath string) error {
-	entries, err := fetchHistory(port, dbPath)
+func printInboxJSON(dbPath string) error {
+	entries, err := fetchHistory(dbPath)
 	if err != nil {
 		return err
 	}
@@ -55,7 +52,7 @@ func printInboxJSON(port int, dbPath string) error {
 	return enc.Encode(entries)
 }
 
-func runInboxUI(port int, dbPath string) error {
+func runInboxUI(dbPath string) error {
 	var inboxApp *app.InboxApp
 
 	if dbPath != "" {
@@ -65,7 +62,7 @@ func runInboxUI(port int, dbPath string) error {
 		}
 		inboxApp = app.NewInboxLocal(s)
 	} else {
-		c, err := client.Dial(port)
+		c, err := client.Dial()
 		if err != nil {
 			deck.Warningf("service not reachable, falling back to direct DB read")
 			s, err := store.OpenReadOnly("")
@@ -93,11 +90,11 @@ func runInboxUI(port int, dbPath string) error {
 	})
 }
 
-func fetchHistory(port int, dbPath string) ([]app.InboxEntry, error) {
+func fetchHistory(dbPath string) ([]app.InboxEntry, error) {
 	if dbPath != "" {
 		return fetchHistoryFromDB(dbPath)
 	}
-	entries, err := fetchHistoryFromService(port)
+	entries, err := fetchHistoryFromService()
 	if err != nil {
 		deck.Warningf("service not reachable (%v), falling back to direct DB read", err)
 		return fetchHistoryFromDB("")
@@ -125,8 +122,8 @@ func fetchHistoryFromDB(dbPath string) ([]app.InboxEntry, error) {
 	return out, nil
 }
 
-func fetchHistoryFromService(port int) ([]app.InboxEntry, error) {
-	c, err := client.Dial(port)
+func fetchHistoryFromService() ([]app.InboxEntry, error) {
+	c, err := client.Dial()
 	if err != nil {
 		return nil, fmt.Errorf("connect to service: %w", err)
 	}

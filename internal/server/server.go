@@ -15,40 +15,31 @@ import (
 	"google.golang.org/grpc"
 )
 
-// DefaultPort is the default TCP port for the gRPC service.
-const DefaultPort = 4770
-
 // Server wraps the gRPC server and notification manager.
 type Server struct {
 	pb.UnimplementedHermesServiceServer
-	mgr    *manager.Manager
-	grpc   *grpc.Server
-	port   int
+	mgr  *manager.Manager
+	grpc *grpc.Server
 }
 
-// New creates a Server bound to the given manager and port.
+// New creates a Server. Call Serve with a pre-opened listener to start.
 // Interceptors are applied in order: first in the list runs outermost.
-func New(mgr *manager.Manager, port int, interceptors ...grpc.UnaryServerInterceptor) *Server {
+func New(mgr *manager.Manager, interceptors ...grpc.UnaryServerInterceptor) *Server {
 	opts := []grpc.ServerOption{grpc.MaxRecvMsgSize(128 * 1024)}
 	if len(interceptors) > 0 {
 		opts = append(opts, grpc.ChainUnaryInterceptor(interceptors...))
 	}
 	s := &Server{
 		mgr:  mgr,
-		port: port,
 		grpc: grpc.NewServer(opts...),
 	}
 	pb.RegisterHermesServiceServer(s.grpc, s)
 	return s
 }
 
-// Serve starts listening on localhost:<port>. Blocks until Stop is called.
-func (s *Server) Serve() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
-	if err != nil {
-		return fmt.Errorf("listen: %w", err)
-	}
-	deck.Infof("gRPC server listening on %s", lis.Addr())
+// Serve starts the gRPC server on lis. Blocks until Stop is called.
+func (s *Server) Serve(lis net.Listener) error {
+	deck.Infof("gRPC server listening on %s:%s", lis.Addr().Network(), lis.Addr())
 	return s.grpc.Serve(lis)
 }
 

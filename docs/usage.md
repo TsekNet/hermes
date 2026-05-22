@@ -372,7 +372,6 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `--config <path or json>` | root | config file or inline JSON/YAML — routes to service |
 | `--local` | root | Render locally in current session (skip service) |
 | `--locale <code>` | root | Override locale for localized notifications (e.g. `ja`, `de`) |
-| `--port <int>` | serve, notify, list, cancel, stop, inbox | gRPC port (default: 4770) |
 | `--no-tray` | serve | Disable the system tray icon (default: auto-detect display server) |
 | `--db <path>` | serve, inbox, motd | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
 | `--json` | inbox | Print history as JSON instead of opening the UI |

@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"path/filepath"
 	"testing"
@@ -14,22 +13,19 @@ import (
 	"github.com/TsekNet/hermes/internal/store"
 )
 
-// startTestService starts a gRPC server on a random port and returns the port.
-func startTestService(t *testing.T) int {
+func startTestService(t *testing.T) string {
 	t.Helper()
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	sock := filepath.Join(t.TempDir(), "hermes.sock")
+	mgr := manager.New(func(n *manager.Notification) {}, nil)
+	srv := server.New(mgr)
+
+	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	port := lis.Addr().(*net.TCPAddr).Port
-	lis.Close()
-
-	mgr := manager.New(func(n *manager.Notification) {}, nil)
-	srv := server.New(mgr, port)
-	go func() { srv.Serve() }()
+	go func() { srv.Serve(lis) }()
 	t.Cleanup(srv.Stop)
-	time.Sleep(100 * time.Millisecond)
-	return port
+	return sock
 }
 
 func testCfg(id string) *config.NotificationConfig {
@@ -47,10 +43,10 @@ func testCfg(id string) *config.NotificationConfig {
 
 func TestDialAndPing(t *testing.T) {
 	t.Parallel()
-	port := startTestService(t)
-	c, err := Dial(port)
+	sock := startTestService(t)
+	c, err := DialPath(sock)
 	if err != nil {
-		t.Fatalf("Dial: %v", err)
+		t.Fatalf("DialPath: %v", err)
 	}
 	defer c.Close()
 
@@ -61,12 +57,11 @@ func TestDialAndPing(t *testing.T) {
 
 func TestNotifyAndReportChoice(t *testing.T) {
 	t.Parallel()
-	port := startTestService(t)
+	sock := startTestService(t)
 
-	// Submit in background via one client.
-	c1, err := Dial(port)
+	c1, err := DialPath(sock)
 	if err != nil {
-		t.Fatalf("Dial: %v", err)
+		t.Fatalf("DialPath: %v", err)
 	}
 	defer c1.Close()
 
@@ -81,8 +76,7 @@ func TestNotifyAndReportChoice(t *testing.T) {
 	}()
 	time.Sleep(200 * time.Millisecond)
 
-	// Report choice via a second client.
-	c2, _ := Dial(port)
+	c2, _ := DialPath(sock)
 	defer c2.Close()
 	ok, err := c2.ReportChoice(context.Background(), "notify-test-1", "ok")
 	if err != nil {
@@ -107,21 +101,19 @@ func TestNotifyAndReportChoice(t *testing.T) {
 
 func TestListAndCancel(t *testing.T) {
 	t.Parallel()
-	port := startTestService(t)
+	sock := startTestService(t)
 
-	// Submit a notification in background.
-	c1, _ := Dial(port)
+	c1, _ := DialPath(sock)
 	defer c1.Close()
 
 	go func() {
-		c1.Notify(context.Background(), testCfg(fmt.Sprintf("lc-%d", port)))
+		c1.Notify(context.Background(), testCfg("lc-1"))
 	}()
 	time.Sleep(200 * time.Millisecond)
 
-	c2, _ := Dial(port)
+	c2, _ := DialPath(sock)
 	defer c2.Close()
 
-	// List should find it.
 	entries, err := c2.List(context.Background())
 	if err != nil {
 		t.Fatalf("List: %v", err)
@@ -130,8 +122,7 @@ func TestListAndCancel(t *testing.T) {
 		t.Fatalf("expected >= 1 entry, got %d", len(entries))
 	}
 
-	// Cancel it.
-	found, err := c2.Cancel(context.Background(), fmt.Sprintf("lc-%d", port))
+	found, err := c2.Cancel(context.Background(), "lc-1")
 	if err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}
@@ -142,18 +133,18 @@ func TestListAndCancel(t *testing.T) {
 
 func TestGetUIConfig(t *testing.T) {
 	t.Parallel()
-	port := startTestService(t)
+	sock := startTestService(t)
 
-	c1, _ := Dial(port)
+	c1, _ := DialPath(sock)
 	defer c1.Close()
 
-	id := fmt.Sprintf("ui-%d", port)
+	id := "ui-test"
 	go func() {
 		c1.Notify(context.Background(), testCfg(id))
 	}()
 	time.Sleep(200 * time.Millisecond)
 
-	c2, _ := Dial(port)
+	c2, _ := DialPath(sock)
 	defer c2.Close()
 
 	cfg, deferAllowed, err := c2.GetUIConfig(context.Background(), id)
@@ -171,42 +162,40 @@ func TestGetUIConfig(t *testing.T) {
 func TestListHistory(t *testing.T) {
 	t.Parallel()
 
-	s, err := store.Open(filepath.Join(t.TempDir(), "history.db"))
+	tmpDir := t.TempDir()
+	s, err := store.Open(filepath.Join(tmpDir, "history.db"))
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
 	t.Cleanup(func() { s.Close() })
 
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	sock := filepath.Join(tmpDir, "hermes.sock")
+	mgr := manager.New(func(n *manager.Notification) {}, s)
+	srv := server.New(mgr)
+
+	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	port := lis.Addr().(*net.TCPAddr).Port
-	lis.Close()
-
-	mgr := manager.New(func(n *manager.Notification) {}, s)
-	srv := server.New(mgr, port)
-	go func() { srv.Serve() }()
+	go func() { srv.Serve(lis) }()
 	t.Cleanup(srv.Stop)
-	time.Sleep(100 * time.Millisecond)
 
-	c1, err := Dial(port)
+	c1, err := DialPath(sock)
 	if err != nil {
-		t.Fatalf("Dial: %v", err)
+		t.Fatalf("DialPath: %v", err)
 	}
 	defer c1.Close()
 
-	// Submit and complete a notification.
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		c1.Notify(context.Background(), testCfg(fmt.Sprintf("hist-%d", port)))
+		c1.Notify(context.Background(), testCfg("hist-1"))
 	}()
 	time.Sleep(200 * time.Millisecond)
 
-	c2, _ := Dial(port)
+	c2, _ := DialPath(sock)
 	defer c2.Close()
-	c2.ReportChoice(context.Background(), fmt.Sprintf("hist-%d", port), "ok")
+	c2.ReportChoice(context.Background(), "hist-1", "ok")
 
 	select {
 	case <-done:
@@ -232,11 +221,9 @@ func TestListHistory(t *testing.T) {
 	}
 }
 
-func TestDialDefault(t *testing.T) {
+func TestDial_NoServer(t *testing.T) {
 	t.Parallel()
-	// DialDefault tries the default port — just confirm it doesn't panic.
-	// Connection may fail (no server), that's fine.
-	c, err := DialDefault()
+	c, err := Dial()
 	if err == nil {
 		c.Close()
 	}

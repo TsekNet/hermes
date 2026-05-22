@@ -29,7 +29,7 @@ func runMotd(dbPath string) error {
 		return nil
 	}
 
-	entries, err := fetchHistory(0, dbPath)
+	entries, err := fetchHistory(dbPath)
 	if err != nil {
 		return nil
 	}

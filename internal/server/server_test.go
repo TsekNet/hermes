@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net"
 	"path/filepath"
 	"testing"
@@ -11,42 +10,32 @@ import (
 
 	"github.com/TsekNet/hermes/internal/config"
 	"github.com/TsekNet/hermes/internal/manager"
+	"github.com/TsekNet/hermes/internal/socket"
 	"github.com/TsekNet/hermes/internal/store"
 	pb "github.com/TsekNet/hermes/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// startTestServer starts a gRPC server on a random port and returns a client.
+// startTestServer starts a gRPC server on a UDS in a temp dir and returns a client.
 func startTestServer(t *testing.T) (pb.HermesServiceClient, *Server) {
 	t.Helper()
 
-	mgr := manager.New(func(n *manager.Notification) {
-		// no-op reshow for tests
-	}, nil)
+	mgr := manager.New(func(n *manager.Notification) {}, nil)
+	sock := filepath.Join(t.TempDir(), "hermes.sock")
+	srv := New(mgr)
 
-	// Find a free port.
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	port := lis.Addr().(*net.TCPAddr).Port
-	lis.Close()
-
-	srv := New(mgr, port)
-
-	go func() {
-		if err := srv.Serve(); err != nil {
-			// Server stopped, expected during cleanup.
-		}
-	}()
+	go func() { srv.Serve(lis) }()
 	t.Cleanup(srv.Stop)
 
-	// Wait for server to be ready.
-	time.Sleep(100 * time.Millisecond)
-
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		socket.DialTarget(sock),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
@@ -215,28 +204,28 @@ func TestList(t *testing.T) {
 func TestListHistory_AfterCompletion(t *testing.T) {
 	t.Parallel()
 
-	s, err := store.Open(filepath.Join(t.TempDir(), "history.db"))
+	tmpDir := t.TempDir()
+	s, err := store.Open(filepath.Join(tmpDir, "history.db"))
 	if err != nil {
 		t.Fatalf("store.Open: %v", err)
 	}
 	t.Cleanup(func() { s.Close() })
 
 	mgr := manager.New(func(n *manager.Notification) {}, s)
+	sock := filepath.Join(tmpDir, "hermes.sock")
+	srv := New(mgr)
 
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	port := lis.Addr().(*net.TCPAddr).Port
-	lis.Close()
-
-	srv := New(mgr, port)
-	go func() { srv.Serve() }()
+	go func() { srv.Serve(lis) }()
 	t.Cleanup(srv.Stop)
-	time.Sleep(100 * time.Millisecond)
 
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		socket.DialTarget(sock),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}

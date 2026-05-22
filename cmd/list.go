@@ -6,17 +6,15 @@ import (
 	"time"
 
 	"github.com/TsekNet/hermes/internal/client"
-	"github.com/TsekNet/hermes/internal/server"
 	"github.com/spf13/cobra"
 )
 
 func listCmd() *cobra.Command {
-	var port int
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List active notifications",
 		RunE: func(_ *cobra.Command, _ []string) error {
-			c, err := client.Dial(port)
+			c, err := client.Dial()
 			if err != nil {
 				return fmt.Errorf("connect to service: %w", err)
 			}
@@ -43,6 +41,5 @@ func listCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().IntVar(&port, "port", server.DefaultPort, "service gRPC port")
 	return cmd
 }

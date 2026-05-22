@@ -5,16 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/TsekNet/hermes/internal/client"
 	"github.com/TsekNet/hermes/internal/config"
-	"github.com/TsekNet/hermes/internal/server"
 	"github.com/google/deck"
 	"github.com/spf13/cobra"
 )
-
-var flagNotifyPort int
 
 func notifyCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -37,7 +33,6 @@ Config can be a file path (JSON or YAML), inline JSON string, or piped via stdin
 		Args:          cobra.MaximumNArgs(1),
 		RunE:          runNotify,
 	}
-	cmd.Flags().IntVar(&flagNotifyPort, "port", server.DefaultPort, "service gRPC port")
 	return cmd
 }
 
@@ -55,7 +50,7 @@ func runNotify(_ *cobra.Command, args []string) error {
 		return broadcastNotify(cfg, args)
 	}
 
-	c, err := client.Dial(flagNotifyPort)
+	c, err := client.Dial()
 	if err != nil {
 		if tryEnqueue(cfg, err) {
 			return nil
@@ -64,7 +59,7 @@ func runNotify(_ *cobra.Command, args []string) error {
 	}
 	defer c.Close()
 
-	deck.Infof("notification: mode=notify heading=%q port=%d buttons=%d", cfg.Heading, flagNotifyPort, len(cfg.Buttons))
+	deck.Infof("notification: mode=notify heading=%q buttons=%d", cfg.Heading, len(cfg.Buttons))
 	result, err := c.Notify(context.Background(), cfg)
 	if err != nil {
 		if tryEnqueue(cfg, err) {
@@ -90,9 +85,6 @@ func broadcastNotify(cfg *config.NotificationConfig, args []string) error {
 	}
 
 	notifyArgs := []string{"notify"}
-	if flagNotifyPort != server.DefaultPort {
-		notifyArgs = append(notifyArgs, "--port", strconv.Itoa(flagNotifyPort))
-	}
 
 	switch {
 	case flagConfig != "":
