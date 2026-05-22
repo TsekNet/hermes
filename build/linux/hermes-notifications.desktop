@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Hermes Notifications
+GenericName=Notification History
+Comment=View past notifications and their responses
+Exec=/usr/local/bin/hermes inbox
+Icon=hermes
+Terminal=false
+Categories=Utility;
+Keywords=notifications;alerts;history;messages;
+StartupNotify=false

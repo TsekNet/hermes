@@ -23,9 +23,24 @@
         <Component Id="HermesAutostart" Guid="D4E5F6A7-B890-1234-CDEF-567890ABCDEF">
           <RegistryValue Root="HKLM" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run" Name="Hermes" Value="&quot;[HermesDir]hermes.exe&quot; serve" Type="string" KeyPath="yes" />
         </Component>
-        <Component Id="CleanupDir" Guid="E5F6A7B8-C901-2345-DEF0-678901BCDEF0">
+<Component Id="CleanupDir" Guid="E5F6A7B8-C901-2345-DEF0-678901BCDEF0">
           <RemoveFolder Id="RemoveHermesDir" On="uninstall" />
           <RegistryValue Root="HKLM" Key="SOFTWARE\TsekNet\Hermes" Name="Cleanup" Value="1" Type="integer" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="HermesMenuFolder" Name="Hermes">
+        <Component Id="HermesStartMenu" Guid="F6A7B8C9-D012-3456-EF01-789012CDEF01">
+          <Shortcut Id="InboxShortcut" Name="Hermes Notifications"
+                    Description="View notification history"
+                    Target="[SystemFolder]conhost.exe"
+                    Arguments="--headless &quot;[#HermesExeFile]&quot; inbox"
+                    WorkingDirectory="HermesDir" Icon="HermesIcon" IconIndex="0" />
+          <RemoveFolder Id="RemoveHermesMenuFolder" On="uninstall" />
+          <RegistryValue Root="HKCU" Key="Software\TsekNet\Hermes"
+                         Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
         </Component>
       </Directory>
     </StandardDirectory>
@@ -56,6 +71,7 @@
       <ComponentRef Id="HermesExe" />
       <ComponentRef Id="HermesAutostart" />
       <ComponentRef Id="CleanupDir" />
+      <ComponentRef Id="HermesStartMenu" />
     </Feature>
   </Package>
 </Wix>

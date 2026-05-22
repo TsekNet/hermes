@@ -18,11 +18,11 @@ Platform-specific behavior: webview engines and deployment. See **[Architecture]
 
 The `hermes serve` daemon runs **per-user** in the desktop session. Run the installer; it handles placement, autostart, and MOTD. No additional setup.
 
-| Platform | Install | Autostart |
-|----------|---------|-----------|
-| Windows | **hermes.msi** | HKLM Run key at logon. `hermes install` also launches the daemon immediately in all active user sessions via Win32 `CreateProcessAsUser`. |
-| Linux | `sudo dpkg -i hermes.deb` | systemd user unit + profile.d. `hermes install` also launches the daemon immediately for all logged-in users via `SysProcAttr.Credential`. |
-| macOS | **hermes.pkg** (universal, Intel + Apple Silicon) | LaunchAgent in `/Library/LaunchAgents`; profile.d + zprofile snippet via postinstall. `hermes install` also launches the daemon immediately for all active users. |
+| Platform | Install | Autostart | App launcher |
+|----------|---------|-----------|-------------|
+| Windows | **hermes.msi** | HKLM Run key at logon. `hermes install` also launches the daemon immediately in all active user sessions via Win32 `CreateProcessAsUser`. | Start Menu shortcut "Hermes Notifications" (via `conhost --headless` to suppress console window) |
+| Linux | `sudo dpkg -i hermes.deb` | systemd user unit + profile.d. `hermes install` also launches the daemon immediately for all logged-in users via `SysProcAttr.Credential`. | .desktop file with `Keywords=notifications;alerts;history;` |
+| macOS | **hermes.pkg** (universal, Intel + Apple Silicon) | LaunchAgent in `/Library/LaunchAgents`; profile.d + zprofile snippet via postinstall. `hermes install` also launches the daemon immediately for all active users. | "Hermes Notifications.app" in /Applications (shell launcher to `hermes inbox`) |
 
 **Silent / MDM install**
 

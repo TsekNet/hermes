@@ -256,6 +256,8 @@ hermes/
 │   └── main.js                    Countdown, dropdowns, Wails bindings
 │
 ├── build/                         Wails build metadata (icons, manifest)
+│   ├── linux/hermes-notifications.desktop  App launcher entry (GNOME/KDE)
+│   └── windows/msi/hermes.wxs             MSI installer (Start Menu shortcut)
 ├── assets/                        Source artwork (logo, screenshots)
 └── docs/                          Documentation
 ```

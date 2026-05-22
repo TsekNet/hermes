@@ -108,13 +108,18 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/v}"
           ARCH=amd64
           PKG=hermes_${VERSION}
-          mkdir -p "${PKG}/usr/local/bin" "${PKG}/usr/lib/systemd/user"
+          mkdir -p "${PKG}/usr/local/bin" "${PKG}/usr/lib/systemd/user" \
+            "${PKG}/usr/share/applications" "${PKG}/usr/share/icons/hicolor/256x256/apps"
           cp -f hermes "${PKG}/usr/local/bin/"
           chmod 755 "${PKG}/usr/local/bin/hermes"
           printf '%s\n' '[Unit]' 'Description=Hermes notification service' '' \
             '[Service]' 'ExecStart=/usr/local/bin/hermes serve' 'Restart=on-failure' '' \
             '[Install]' 'WantedBy=default.target' > "${PKG}/usr/lib/systemd/user/hermes.service"
           chmod 644 "${PKG}/usr/lib/systemd/user/hermes.service"
+          cp ../build/linux/hermes-notifications.desktop "${PKG}/usr/share/applications/"
+          chmod 644 "${PKG}/usr/share/applications/hermes-notifications.desktop"
+          cp ../build/appicon.png "${PKG}/usr/share/icons/hicolor/256x256/apps/hermes.png"
+          chmod 644 "${PKG}/usr/share/icons/hicolor/256x256/apps/hermes.png"
           mkdir -p "${PKG}/DEBIAN"
           printf 'Package: hermes\nVersion: %s\nArchitecture: %s\nMaintainer: Hermes <admin@tseknet.com>\nDescription: Cross-platform notification daemon (per-user gRPC + Wails UI)\n' "$VERSION" "$ARCH" > "${PKG}/DEBIAN/control"
           printf '%s\n' '#!/bin/sh' 'set -e' \
@@ -131,6 +136,8 @@ jobs:
             'if [ "$1" = "purge" ] || [ "$1" = "remove" ]; then' \
             '  /usr/local/bin/hermes uninstall 2>/dev/null || true' \
             '  rm -f /usr/lib/systemd/user/hermes.service' \
+            '  rm -f /usr/share/applications/hermes-notifications.desktop' \
+            '  rm -f /usr/share/icons/hicolor/256x256/apps/hermes.png' \
             '  for home_dir in /home/*; do' \
             '    rm -f "$home_dir/.config/systemd/user/hermes.service" 2>/dev/null || true' \
             '  done' \
@@ -150,6 +157,8 @@ jobs:
     needs: build
     runs-on: macos-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download macOS artifacts
         uses: actions/download-artifact@v4
         with:
@@ -168,6 +177,48 @@ jobs:
           mkdir -p "$PKGROOT/usr/local/bin"
           cp hermes "$PKGROOT/usr/local/bin/hermes"
           chmod 755 "$PKGROOT/usr/local/bin/hermes"
+
+          # Build .app bundle for Spotlight discoverability
+          APP="$PKGROOT/Applications/Hermes Notifications.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          printf '#!/bin/sh\nexec /usr/local/bin/hermes inbox "$@"\n' > "$APP/Contents/MacOS/launcher"
+          chmod 755 "$APP/Contents/MacOS/launcher"
+
+          # Generate .icns from source PNG
+          ICONSET="$(mktemp -d)/AppIcon.iconset"
+          mkdir -p "$ICONSET"
+          for size in 16 32 128 256 512; do
+            sips -z $size $size build/appicon.png --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+            double=$((size * 2))
+            sips -z $double $double build/appicon.png --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+          done
+          iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
+
+          cat > "$APP/Contents/Info.plist" << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleIdentifier</key>
+            <string>com.tseknet.hermes.notifications</string>
+            <key>CFBundleName</key>
+            <string>Hermes Notifications</string>
+            <key>CFBundleDisplayName</key>
+            <string>Hermes Notifications</string>
+            <key>CFBundleExecutable</key>
+            <string>launcher</string>
+            <key>CFBundleIconFile</key>
+            <string>AppIcon</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleVersion</key>
+            <string>1.0</string>
+            <key>LSUIElement</key>
+            <false/>
+          </dict>
+          </plist>
+          PLIST
+
           SCRIPTS="$(mktemp -d)"
           printf '%s\n' '#!/bin/sh' \
             '/usr/local/bin/hermes stop 2>/dev/null || true' \

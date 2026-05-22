@@ -96,6 +96,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Dependencies** | Sequential workflows: notification B waits for notification A to complete. |
 | **Broadcast** | Run as SYSTEM/root, auto-delivers to all active user sessions. No wrapper scripts needed. |
 | **System tray icon** | Persistent notification-area icon with pending count and quick inbox access. Auto-detected on desktop sessions, skipped on headless. |
+| **App launcher shortcut** | "Hermes Notifications" in Start Menu / Spotlight / GNOME Activities. Searchable by name and "notifications" keyword. |
 
 ## Why web-based
 
