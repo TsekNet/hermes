@@ -34,8 +34,7 @@ func FormatTooltip(count int) string {
 	}
 }
 
-// FormatInboxLabel returns the "Notification History" menu label, appending the
-// action-required count when there are active notifications.
+// FormatInboxLabel returns the tray menu label, appending the count when active.
 func FormatInboxLabel(count int) string {
 	if count <= 0 {
 		return "Notification History"

@@ -24,7 +24,7 @@ func TestBadgeIcon_NegativeReturnsBase(t *testing.T) {
 	}
 }
 
-func TestBadgeIcon_ValidPNG(t *testing.T) {
+func TestBadgeIcon_ActiveShowsDot(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -33,8 +33,7 @@ func TestBadgeIcon_ValidPNG(t *testing.T) {
 	}{
 		{"one", 1},
 		{"five", 5},
-		{"ten", 10},
-		{"over ten", 15},
+		{"fifteen", 15},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -53,6 +52,15 @@ func TestBadgeIcon_ValidPNG(t *testing.T) {
 				t.Errorf("dimensions = %dx%d, want 64x64", bounds.Dx(), bounds.Dy())
 			}
 		})
+	}
+}
+
+func TestBadgeIcon_AllCountsProduceSameIcon(t *testing.T) {
+	t.Parallel()
+	one := BadgeIcon(IconBytes(), 1)
+	ten := BadgeIcon(IconBytes(), 10)
+	if !bytes.Equal(one, ten) {
+		t.Error("badge should be identical regardless of count (red dot only)")
 	}
 }
 
