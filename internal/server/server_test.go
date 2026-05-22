@@ -278,6 +278,40 @@ func TestListHistory_AfterCompletion(t *testing.T) {
 	}
 }
 
+func TestListHistory_IncludesActiveItems(t *testing.T) {
+	t.Parallel()
+	client, _ := startTestServer(t)
+	ctx := context.Background()
+
+	// Submit two notifications without completing them.
+	go func() {
+		client.Notify(ctx, &pb.NotifyRequest{Id: "active-1", ConfigJson: testConfigJSON("Active One")})
+	}()
+	go func() {
+		client.Notify(ctx, &pb.NotifyRequest{Id: "active-2", ConfigJson: testConfigJSON("Active Two")})
+	}()
+	time.Sleep(200 * time.Millisecond)
+
+	resp, err := client.ListHistory(ctx, &pb.ListHistoryRequest{})
+	if err != nil {
+		t.Fatalf("ListHistory: %v", err)
+	}
+
+	// Should have 2 active items with config_json set and empty response_value.
+	var activeCount int
+	for _, r := range resp.Records {
+		if r.ResponseValue == "" && r.CompletedUnix == 0 {
+			activeCount++
+			if r.ConfigJson == nil {
+				t.Errorf("active record %s should have config_json", r.Id)
+			}
+		}
+	}
+	if activeCount != 2 {
+		t.Errorf("active records = %d, want 2", activeCount)
+	}
+}
+
 func TestListHistory_Empty(t *testing.T) {
 	t.Parallel()
 	client, _ := startTestServer(t)

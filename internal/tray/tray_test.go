@@ -12,13 +12,13 @@ func TestFormatTooltip(t *testing.T) {
 		count int
 		want  string
 	}{
-		{"zero", 0, "Hermes — no pending notifications"},
-		{"one", 1, "Hermes — 1 pending notification"},
-		{"plural", 3, "Hermes — 3 pending notifications"},
-		{"nine", 9, "Hermes — 9 pending notifications"},
-		{"at capacity", 10, "Hermes — at capacity (10 pending)"},
-		{"over capacity", 15, "Hermes — at capacity (15 pending)"},
-		{"negative clamped", -1, "Hermes — no pending notifications"},
+		{"zero", 0, "Hermes — no notifications need your attention"},
+		{"one", 1, "Hermes — 1 notification needs your attention"},
+		{"plural", 3, "Hermes — 3 notifications need your attention"},
+		{"nine", 9, "Hermes — 9 notifications need your attention"},
+		{"at capacity", 10, "Hermes — at capacity (10 need attention)"},
+		{"over capacity", 15, "Hermes — at capacity (15 need attention)"},
+		{"negative clamped", -1, "Hermes — no notifications need your attention"},
 	}
 
 	for _, tt := range tests {
@@ -39,10 +39,10 @@ func TestFormatInboxLabel(t *testing.T) {
 		count int
 		want  string
 	}{
-		{"zero", 0, "Open Inbox"},
-		{"one", 1, "Open Inbox (Pending: 1)"},
-		{"many", 5, "Open Inbox (Pending: 5)"},
-		{"negative", -1, "Open Inbox"},
+		{"zero", 0, "Notification History"},
+		{"one", 1, "Notification History (1)"},
+		{"many", 5, "Notification History (5)"},
+		{"negative", -1, "Notification History"},
 	}
 
 	for _, tt := range tests {

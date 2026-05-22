@@ -16,31 +16,30 @@ const MaxActiveNotifications = 10
 // IconBytes returns the embedded tray icon bytes (ICO on Windows, PNG elsewhere).
 func IconBytes() []byte { return iconData }
 
-// FormatTooltip returns the tooltip text for the given pending count.
+// FormatTooltip returns the tooltip text for the given action-required count.
 func FormatTooltip(count int) string {
 	if count < 0 {
 		count = 0
 	}
 	if count >= MaxActiveNotifications {
-		return fmt.Sprintf("Hermes — at capacity (%d pending)", count)
+		return fmt.Sprintf("Hermes — at capacity (%d need attention)", count)
 	}
 	switch count {
 	case 0:
-		return "Hermes — no pending notifications"
+		return "Hermes — no notifications need your attention"
 	case 1:
-		return "Hermes — 1 pending notification"
+		return "Hermes — 1 notification needs your attention"
 	default:
-		return fmt.Sprintf("Hermes — %d pending notifications", count)
+		return fmt.Sprintf("Hermes — %d notifications need your attention", count)
 	}
 }
 
-// FormatInboxLabel returns the "Open Inbox" menu label, appending the
-// pending count when there are active notifications.
+// FormatInboxLabel returns the tray menu label, appending the count when active.
 func FormatInboxLabel(count int) string {
 	if count <= 0 {
-		return "Open Inbox"
+		return "Notification History"
 	}
-	return fmt.Sprintf("Open Inbox (Pending: %d)", count)
+	return fmt.Sprintf("Notification History (%d)", count)
 }
 
 // ShouldEnable reports whether the tray icon should be started on the

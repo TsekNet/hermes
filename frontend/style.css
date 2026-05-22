@@ -267,6 +267,15 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px 10px;
+  transition: opacity 0.3s, border-color 0.3s;
+}
+
+.inbox-card-active {
+  border-left: 3px solid var(--accent);
+}
+
+.inbox-card-resolved {
+  opacity: 0.55;
 }
 
 .inbox-card-top {
@@ -295,6 +304,7 @@ html, body {
 .badge-muted { background: rgba(160,160,160,0.15); color: var(--text-muted); }
 .badge-warn { background: rgba(241,196,15,0.2); color: #f1c40f; }
 
+
 .inbox-card-message {
   font-size: 11px;
   color: var(--text);
@@ -315,6 +325,7 @@ html, body {
 
 .badge-action:hover { opacity: 0.75; }
 .badge-action:disabled { opacity: 0.5; cursor: default; }
+
 
 .inbox-empty {
   display: flex;

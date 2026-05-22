@@ -106,9 +106,29 @@ func (s *Server) Cancel(_ context.Context, req *pb.CancelRequest) (*pb.CancelRes
 }
 
 func (s *Server) ListHistory(_ context.Context, _ *pb.ListHistoryRequest) (*pb.ListHistoryResponse, error) {
-	records := s.mgr.ListHistory()
 	var out []*pb.HistoryEntry
-	for _, r := range records {
+
+	// Active notifications first (need user action).
+	for _, r := range s.mgr.ListForInbox() {
+		if r.Config == nil {
+			continue
+		}
+		cfgJSON, err := json.Marshal(r.Config)
+		if err != nil {
+			continue
+		}
+		out = append(out, &pb.HistoryEntry{
+			Id:         r.ID,
+			Heading:    r.Config.Heading,
+			Message:    r.Config.Message,
+			Source:     r.Config.Title,
+			CreatedUnix: r.CreatedAt.Unix(),
+			ConfigJson: cfgJSON,
+		})
+	}
+
+	// Completed notifications from history store.
+	for _, r := range s.mgr.ListHistory() {
 		if r.Config == nil {
 			continue
 		}

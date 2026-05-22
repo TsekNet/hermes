@@ -2,11 +2,13 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
-	"github.com/TsekNet/hermes/internal/client"
-	"github.com/TsekNet/hermes/internal/store"
 	"github.com/TsekNet/hermes/internal/action"
+	"github.com/TsekNet/hermes/internal/client"
+	"github.com/TsekNet/hermes/internal/config"
+	"github.com/TsekNet/hermes/internal/store"
 	"github.com/google/deck"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -16,15 +18,24 @@ const (
 	InboxHeight = 520
 )
 
+// InboxButton is the JSON shape for an inline action button.
+type InboxButton struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+	Style string `json:"style,omitempty"`
+}
+
 // InboxEntry is the JSON shape sent to the inbox frontend.
 type InboxEntry struct {
-	ID            string `json:"id"`
-	Heading       string `json:"heading"`
-	Message       string `json:"message"`
-	Source        string `json:"source"`
-	ResponseValue string `json:"response_value"`
-	CreatedAt     string `json:"created_at"`
-	CompletedAt   string `json:"completed_at"`
+	ID             string        `json:"id"`
+	Heading        string        `json:"heading"`
+	Message        string        `json:"message"`
+	Source         string        `json:"source"`
+	ResponseValue  string        `json:"response_value"`
+	CreatedAt      string        `json:"created_at"`
+	CompletedAt    string        `json:"completed_at"`
+	ActionRequired bool          `json:"action_required"`
+	Buttons        []InboxButton `json:"buttons,omitempty"`
 }
 
 // InboxApp is the Wails backend for the inbox view.
@@ -83,15 +94,49 @@ func InboxEntryFromRecord(r *store.HistoryRecord) InboxEntry {
 
 // InboxEntryFromClientEntry converts a client.HistoryEntry to an InboxEntry.
 func InboxEntryFromClientEntry(e client.HistoryEntry) InboxEntry {
-	return InboxEntry{
-		ID:            e.ID,
-		Heading:       e.Heading,
-		Message:       e.Message,
-		Source:        e.Source,
-		ResponseValue: e.ResponseValue,
-		CreatedAt:     e.CreatedAt.Format(time.RFC3339),
-		CompletedAt:   e.CompletedAt.Format(time.RFC3339),
+	entry := InboxEntry{
+		ID:             e.ID,
+		Heading:        e.Heading,
+		Message:        e.Message,
+		Source:         e.Source,
+		ResponseValue:  e.ResponseValue,
+		CreatedAt:      e.CreatedAt.Format(time.RFC3339),
+		CompletedAt:    e.CompletedAt.Format(time.RFC3339),
+		ActionRequired: e.ActionRequired,
 	}
+	if e.ActionRequired && len(e.ConfigJSON) > 0 {
+		var cfg config.NotificationConfig
+		if err := json.Unmarshal(e.ConfigJSON, &cfg); err == nil {
+			for _, b := range cfg.Buttons {
+				entry.Buttons = append(entry.Buttons, InboxButton{
+					Label: b.Label,
+					Value: b.Value,
+					Style: b.Style,
+				})
+			}
+		}
+	}
+	return entry
+}
+
+// RespondToNotification sends a user choice for an active notification.
+// Returns "ok" on success or an error string.
+func (a *InboxApp) RespondToNotification(id, value string) string {
+	if a.grpcClient == nil {
+		return "error: no service connection"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	accepted, err := a.grpcClient.ReportChoice(ctx, id, value)
+	if err != nil {
+		deck.Errorf("inbox: report choice %s=%s: %v", id, value, err)
+		return "error: " + err.Error()
+	}
+	if !accepted {
+		return "error: choice not accepted"
+	}
+	deck.Infof("inbox: responded to %s with %s", id, value)
+	return "ok"
 }
 
 // RunAction re-opens a uri:-prefixed value from history. Only uri: is

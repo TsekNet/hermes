@@ -143,15 +143,18 @@ func (c *Client) List(ctx context.Context) ([]ListEntry, error) {
 	return out, nil
 }
 
-// HistoryEntry is a completed notification from the ListHistory RPC.
+// HistoryEntry is a notification from the ListHistory RPC.
+// ActionRequired is true for active notifications that still need user input.
 type HistoryEntry struct {
-	ID            string
-	Heading       string
-	Message       string
-	Source        string
-	ResponseValue string
-	CreatedAt     time.Time
-	CompletedAt   time.Time
+	ID             string
+	Heading        string
+	Message        string
+	Source         string
+	ResponseValue  string
+	CreatedAt      time.Time
+	CompletedAt    time.Time
+	ActionRequired bool
+	ConfigJSON     []byte
 }
 
 // ListHistory returns completed notification history from the service.
@@ -162,14 +165,17 @@ func (c *Client) ListHistory(ctx context.Context) ([]HistoryEntry, error) {
 	}
 	out := make([]HistoryEntry, len(resp.Records))
 	for i, r := range resp.Records {
+		active := r.ResponseValue == "" && r.CompletedUnix == 0
 		out[i] = HistoryEntry{
-			ID:            r.Id,
-			Heading:       r.Heading,
-			Message:       r.Message,
-			Source:        r.Source,
-			ResponseValue: r.ResponseValue,
-			CreatedAt:     time.Unix(r.CreatedUnix, 0),
-			CompletedAt:   time.Unix(r.CompletedUnix, 0),
+			ID:             r.Id,
+			Heading:        r.Heading,
+			Message:        r.Message,
+			Source:         r.Source,
+			ResponseValue:  r.ResponseValue,
+			CreatedAt:      time.Unix(r.CreatedUnix, 0),
+			CompletedAt:    time.Unix(r.CompletedUnix, 0),
+			ActionRequired: active,
+			ConfigJSON:     r.ConfigJson,
 		}
 	}
 	return out, nil

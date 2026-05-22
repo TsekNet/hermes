@@ -43,6 +43,10 @@
     }, 100);
   }
 
+  var POLL_INTERVAL_MS = 3000;
+  var pollTimer = null;
+  var knownEntries = {};
+
   function initInbox() {
     document.body.innerHTML = "";
     document.body.className = "inbox-body";
@@ -72,12 +76,65 @@
     InboxBackend.GetHistory().then(function(entries) {
       renderInbox(entries || []);
       InboxBackend.Ready();
+      startInboxPoll();
     }).catch(function(err) {
       console.error("GetHistory failed:", err);
       var list = document.getElementById("inbox-list");
       list.textContent = "Error loading history: " + err;
       InboxBackend.Ready();
     });
+  }
+
+  function startInboxPoll() {
+    if (pollTimer) return;
+    pollTimer = setInterval(function() {
+      InboxBackend.GetHistory().then(function(entries) {
+        refreshInbox(entries || []);
+      }).catch(function() {});
+    }, POLL_INTERVAL_MS);
+  }
+
+  function refreshInbox(entries) {
+    var newMap = {};
+    for (var i = 0; i < entries.length; i++) {
+      newMap[entries[i].id] = entries[i];
+    }
+
+    for (var id in knownEntries) {
+      var was = knownEntries[id];
+      var now = newMap[id];
+      if (was.action_required && (!now || !now.action_required)) {
+        resolveCard(id, now ? now.response_value : "completed");
+      }
+    }
+
+    for (var id in newMap) {
+      if (!knownEntries[id]) {
+        var list = document.getElementById("inbox-list");
+        var empty = list.querySelector(".inbox-empty");
+        if (empty) empty.remove();
+        var card = buildInboxCard(newMap[id]);
+        list.insertBefore(card, list.firstChild);
+      }
+    }
+
+    knownEntries = newMap;
+  }
+
+  function resolveCard(id, responseValue) {
+    var card = document.querySelector('[data-notification-id="' + id + '"]');
+    if (!card || card.classList.contains("inbox-card-resolved")) return;
+    card.classList.add("inbox-card-resolved");
+    card.classList.remove("inbox-card-active");
+
+    var oldBadge = card.querySelector(".inbox-card-badge");
+    if (oldBadge) {
+      var label = (responseValue || "completed").replace(/_/g, " ");
+      var span = document.createElement("span");
+      span.className = "inbox-card-badge badge-ok";
+      span.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      oldBadge.parentNode.replaceChild(span, oldBadge);
+    }
   }
 
   function renderInbox(entries) {
@@ -89,7 +146,10 @@
       list.appendChild(empty);
       return;
     }
+
+    knownEntries = {};
     for (var i = 0; i < entries.length; i++) {
+      knownEntries[entries[i].id] = entries[i];
       list.appendChild(buildInboxCard(entries[i]));
     }
   }
@@ -97,6 +157,13 @@
   function buildInboxCard(entry) {
     var card = document.createElement("div");
     card.className = "inbox-card";
+    card.setAttribute("data-notification-id", entry.id);
+
+    if (entry.action_required) {
+      card.classList.add("inbox-card-active");
+    } else {
+      card.classList.add("inbox-card-resolved");
+    }
 
     var top = document.createElement("div");
     top.className = "inbox-card-top";
@@ -106,6 +173,48 @@
     heading.textContent = entry.heading;
     top.appendChild(heading);
 
+    if (entry.action_required) {
+      var primary = findPrimaryButton(entry.buttons);
+      if (primary) {
+        var badge = document.createElement("button");
+        badge.className = "inbox-card-badge badge-ok badge-action";
+        badge.textContent = primary.label;
+        badge.setAttribute("data-id", entry.id);
+        badge.setAttribute("data-value", primary.value || primary.label.toLowerCase());
+        badge.addEventListener("click", onInlineButtonClick);
+        top.appendChild(badge);
+      }
+    } else {
+      var badge = buildResponseBadge(entry);
+      top.appendChild(badge);
+    }
+    card.appendChild(top);
+
+    if (entry.message) {
+      var msg = document.createElement("div");
+      msg.className = "inbox-card-message";
+      msg.textContent = entry.message;
+      card.appendChild(msg);
+    }
+
+    var meta = document.createElement("div");
+    meta.className = "inbox-card-meta";
+    var parts = [];
+    if (entry.source) parts.push(entry.source);
+    if (entry.action_required) {
+      var d = new Date(entry.created_at);
+      parts.push("Received " + d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}));
+    } else if (entry.completed_at) {
+      var d = new Date(entry.completed_at);
+      parts.push(d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}));
+    }
+    meta.textContent = parts.join("  \u00B7  ");
+    card.appendChild(meta);
+
+    return card;
+  }
+
+  function buildResponseBadge(entry) {
     var actionable = entry.response_value && entry.response_value !== "dismiss"
         && entry.response_value !== "cancelled" && entry.response_value.indexOf("timeout") !== 0;
 
@@ -137,28 +246,36 @@
         });
       });
     }
-    top.appendChild(badge);
-    card.appendChild(top);
+    return badge;
+  }
 
-    if (entry.message) {
-      var msg = document.createElement("div");
-      msg.className = "inbox-card-message";
-      msg.textContent = entry.message;
-      card.appendChild(msg);
+  function findPrimaryButton(buttons) {
+    if (!buttons || buttons.length === 0) return null;
+    for (var i = 0; i < buttons.length; i++) {
+      if (buttons[i].style === "primary" || buttons[i].style === "danger") return buttons[i];
     }
+    return buttons[0];
+  }
 
-    var meta = document.createElement("div");
-    meta.className = "inbox-card-meta";
-    var parts = [];
-    if (entry.source) parts.push(entry.source);
-    if (entry.completed_at) {
-      var d = new Date(entry.completed_at);
-      parts.push(d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}));
-    }
-    meta.textContent = parts.join("  \u00B7  ");
-    card.appendChild(meta);
+  function onInlineButtonClick(e) {
+    var btn = e.target;
+    var id = btn.getAttribute("data-id");
+    var value = btn.getAttribute("data-value");
 
-    return card;
+    btn.disabled = true;
+    btn.textContent = "Sending...";
+
+    InboxBackend.RespondToNotification(id, value).then(function(result) {
+      if (result === "ok") {
+        resolveCard(id, value);
+      } else {
+        btn.textContent = "Error";
+        btn.disabled = false;
+      }
+    }).catch(function() {
+      btn.textContent = "Failed";
+      btn.disabled = false;
+    });
   }
 
   function configure(cfg) {
