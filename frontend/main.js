@@ -10,6 +10,7 @@
   var InboxBackend = null;
   var carouselIndex = 0;
   var carouselTotal = 0;
+  var totalTime = 0;
 
   var validStyles = { primary: true, secondary: true, danger: true };
 
@@ -372,31 +373,23 @@
 
   function initWatchStatus() {
     var el = document.getElementById("watch-status");
-    el.style.display = "flex";
+    el.style.display = "block";
+    el.textContent = "Monitoring filesystem...";
 
-    var dots = document.createElement("span");
-    dots.className = "watch-dots";
-    for (var i = 0; i < 3; i++) {
-      var dot = document.createElement("span");
-      dot.className = "watch-dot";
-      dots.appendChild(dot);
+    var fill = document.getElementById("bar-fill");
+    if (fill) {
+      var shimmer = document.createElement("span");
+      shimmer.className = "bar-shimmer";
+      shimmer.id = "bar-shimmer";
+      fill.appendChild(shimmer);
     }
-    el.appendChild(dots);
-
-    var text = document.createElement("span");
-    text.className = "watch-text";
-    text.textContent = "Monitoring filesystem...";
-    el.appendChild(text);
 
     if (window.runtime && window.runtime.EventsOn) {
-      var resetTimer = null;
       window.runtime.EventsOn("fs:event", function(ev) {
         var basename = ev.path.split("/").pop().split("\\").pop();
-        text.textContent = ev.op + ": " + basename;
-        if (resetTimer) clearTimeout(resetTimer);
-        resetTimer = setTimeout(function() {
-          text.textContent = "Monitoring filesystem...";
-        }, 3000);
+        el.textContent = ev.op + ": " + basename;
+        var sh = document.getElementById("bar-shimmer");
+        if (sh) sh.classList.add("stopped");
       });
     }
   }
@@ -464,6 +457,11 @@
   }
 
   function startCountdown() {
+    totalTime = remaining;
+    var cd = document.getElementById("countdown");
+    cd.setAttribute("role", "progressbar");
+    cd.setAttribute("aria-valuemin", "0");
+    cd.setAttribute("aria-valuemax", String(totalTime));
     updateCountdown();
     timer = setInterval(function() {
       remaining--;
@@ -474,10 +472,19 @@
 
   function updateCountdown() {
     var el = document.getElementById("countdown");
-    if (remaining <= 0) { el.textContent = ""; return; }
+    var fill = document.getElementById("bar-fill");
+    if (remaining <= 0) {
+      el.textContent = "";
+      if (fill) fill.style.transform = "scaleX(0)";
+      return;
+    }
     var m = Math.floor(remaining / 60);
     var s = remaining % 60;
     el.textContent = "Auto-action in " + m + ":" + (s < 10 ? "0" : "") + s;
+    el.setAttribute("aria-valuenow", String(remaining));
+    if (fill && totalTime > 0) {
+      fill.style.transform = "scaleX(" + (remaining / totalTime) + ")";
+    }
   }
 
   document.addEventListener("click", function() {
