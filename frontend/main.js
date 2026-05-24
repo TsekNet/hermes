@@ -14,6 +14,13 @@
 
   var validStyles = { primary: true, secondary: true, danger: true };
 
+  var _decodeEl = document.createElement("textarea");
+  function decodeHTMLEntities(s) {
+    if (!s || s.indexOf("&") === -1) return s;
+    _decodeEl.innerHTML = s;
+    return _decodeEl.value;
+  }
+
   function findBackend(method) {
     if (!window.go) return null;
     for (var ns in window.go) {
@@ -171,7 +178,7 @@
 
     var heading = document.createElement("span");
     heading.className = "inbox-card-heading";
-    heading.textContent = entry.heading;
+    heading.textContent = decodeHTMLEntities(entry.heading);
     top.appendChild(heading);
 
     if (entry.action_required) {
@@ -179,7 +186,7 @@
       if (primary) {
         var badge = document.createElement("button");
         badge.className = "inbox-card-badge badge-ok badge-action";
-        badge.textContent = primary.label;
+        badge.textContent = decodeHTMLEntities(primary.label);
         badge.setAttribute("data-id", entry.id);
         badge.setAttribute("data-value", primary.value || primary.label.toLowerCase());
         badge.addEventListener("click", onInlineButtonClick);
@@ -194,7 +201,7 @@
     if (entry.message) {
       var msg = document.createElement("div");
       msg.className = "inbox-card-message";
-      msg.textContent = entry.message;
+      msg.textContent = decodeHTMLEntities(entry.message);
       card.appendChild(msg);
     }
 
@@ -287,9 +294,9 @@
       document.documentElement.style.setProperty("--btn-primary-bg", cfg.accent_color);
     }
 
-    document.getElementById("title").textContent = cfg.title || "";
-    document.getElementById("heading").textContent = cfg.heading || "";
-    document.getElementById("message").textContent = cfg.message || "";
+    document.getElementById("title").textContent = decodeHTMLEntities(cfg.title || "");
+    document.getElementById("heading").textContent = decodeHTMLEntities(cfg.heading || "");
+    document.getElementById("message").textContent = decodeHTMLEntities(cfg.message || "");
 
     if (cfg.help_url && /^https?:\/\//i.test(cfg.help_url)) {
       var link = document.getElementById("help-link");
@@ -404,7 +411,7 @@
       } else {
         var el = document.createElement("button");
         el.className = "btn btn-" + (validStyles[btn.style] ? btn.style : "secondary");
-        el.textContent = btn.label;
+        el.textContent = decodeHTMLEntities(btn.label);
         el.setAttribute("data-value", btn.value || btn.label.toLowerCase());
         el.addEventListener("click", onButtonClick);
         container.appendChild(el);
@@ -418,7 +425,7 @@
 
     var trigger = document.createElement("button");
     trigger.className = "btn btn-" + (validStyles[btn.style] ? btn.style : "secondary");
-    trigger.textContent = btn.label + " \u25B4";
+    trigger.textContent = decodeHTMLEntities(btn.label) + " \u25B4";
     trigger.addEventListener("click", function(e) {
       e.stopPropagation();
       wrapper.querySelector(".dropdown-menu").classList.toggle("open");
@@ -431,7 +438,7 @@
       var opt = btn.dropdown[j];
       var item = document.createElement("div");
       item.className = "dropdown-item";
-      item.textContent = opt.label;
+      item.textContent = decodeHTMLEntities(opt.label);
       item.setAttribute("data-value", opt.value || opt.label || "");
       item.addEventListener("click", onButtonClick);
       menu.appendChild(item);
