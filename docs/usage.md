@@ -213,7 +213,7 @@ Monitor filesystem paths for changes during the notification. When a watched pat
 }
 ```
 
-The notification footer shows "Monitoring filesystem..." initially, and a shimmer animation sweeps across the accent bar to indicate active watching. When a watched file event fires (e.g. "CREATE: version.txt"), the shimmer stops permanently and the footer updates with the event. The accent bar continues shrinking as the countdown timer progresses. The frontend receives events via the Wails `fs:event` event channel, so custom frontends can also subscribe.
+The notification footer shows "Monitoring filesystem..." initially, and a shimmer animation sweeps across the accent bar to indicate active watching. When a watched file event fires (e.g. "create: version.txt"), the shimmer stops permanently and the footer updates with the event. The accent bar continues shrinking as the countdown timer progresses. The frontend receives events via the Wails `fs:event` event channel, so custom frontends can also subscribe.
 
 If a watched path doesn't exist yet, hermes watches its parent directory to catch creation events.
 

@@ -158,8 +158,8 @@ foreach ($cfg in $configs) {
     $json = Get-Content $cfg.FullName -Raw | ConvertFrom-Json
     $json | Add-Member -NotePropertyName 'dnd' -NotePropertyValue 'ignore' -Force
     if ($name -eq 'localized-restart' -and $json.heading_localized) {
-        $json.heading = $json.heading_localized.ja
-        $json.message = $json.message_localized.ja
+        if ($json.heading_localized.ja) { $json.heading = $json.heading_localized.ja }
+        if ($json.message_localized.ja) { $json.message = $json.message_localized.ja }
     }
     $json | ConvertTo-Json -Depth 10 | Set-Content $tmpCfg -Encoding UTF8
     $p = Start-Process -FilePath $HermesExe -ArgumentList '--local', "`"$tmpCfg`"" -PassThru
@@ -173,6 +173,8 @@ foreach ($cfg in $configs) {
     Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 1
 }
+
+Remove-Item -Path $tmpCfg -ErrorAction SilentlyContinue
 
 # ── Phase 1b: hero screenshot (about + defer + "Need help?") ──
 

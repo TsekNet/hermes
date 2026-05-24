@@ -46,7 +46,6 @@ html, body {
   background: var(--accent);
   transform-origin: left;
   will-change: transform;
-  overflow: hidden;
 }
 
 .bar-shimmer {
@@ -68,6 +67,10 @@ html, body {
 @keyframes bar-shimmer {
   0% { transform: translateX(-150%); }
   100% { transform: translateX(400%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-shimmer { animation: none; }
 }
 
 .container {

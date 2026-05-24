@@ -11,6 +11,7 @@
   var carouselIndex = 0;
   var carouselTotal = 0;
   var totalTime = 0;
+  var barFill = null;
 
   var validStyles = { primary: true, secondary: true, danger: true };
 
@@ -384,19 +385,19 @@
     el.textContent = "Monitoring filesystem...";
 
     var fill = document.getElementById("bar-fill");
-    if (fill) {
+    if (fill && fill.parentNode) {
       var shimmer = document.createElement("span");
       shimmer.className = "bar-shimmer";
       shimmer.id = "bar-shimmer";
-      fill.appendChild(shimmer);
+      fill.parentNode.appendChild(shimmer);
     }
 
     if (window.runtime && window.runtime.EventsOn) {
       window.runtime.EventsOn("fs:event", function(ev) {
         var basename = ev.path.split("/").pop().split("\\").pop();
         el.textContent = ev.op + ": " + basename;
-        var sh = document.getElementById("bar-shimmer");
-        if (sh) sh.classList.add("stopped");
+        var shimmer = document.getElementById("bar-shimmer");
+        if (shimmer) shimmer.classList.add("stopped");
       });
     }
   }
@@ -465,6 +466,7 @@
 
   function startCountdown() {
     totalTime = remaining;
+    barFill = document.getElementById("bar-fill");
     var cd = document.getElementById("countdown");
     cd.setAttribute("role", "progressbar");
     cd.setAttribute("aria-valuemin", "0");
@@ -479,18 +481,19 @@
 
   function updateCountdown() {
     var el = document.getElementById("countdown");
-    var fill = document.getElementById("bar-fill");
     if (remaining <= 0) {
       el.textContent = "";
-      if (fill) fill.style.transform = "scaleX(0)";
+      if (barFill) barFill.style.transform = "scaleX(0)";
       return;
     }
     var m = Math.floor(remaining / 60);
     var s = remaining % 60;
-    el.textContent = "Auto-action in " + m + ":" + (s < 10 ? "0" : "") + s;
+    var label = "Auto-action in " + m + ":" + (s < 10 ? "0" : "") + s;
+    el.textContent = label;
     el.setAttribute("aria-valuenow", String(remaining));
-    if (fill && totalTime > 0) {
-      fill.style.transform = "scaleX(" + (remaining / totalTime) + ")";
+    el.setAttribute("aria-valuetext", label);
+    if (barFill && totalTime > 0) {
+      barFill.style.transform = "scaleX(" + (remaining / totalTime) + ")";
     }
   }
 
