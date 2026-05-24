@@ -54,14 +54,18 @@ public class HermesCapture {
 
     [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc cb, IntPtr lParam);
     [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, StringBuilder sb, int max);
+    [DllImport("user32.dll")] public static extern int GetClassName(IntPtr hWnd, StringBuilder sb, int max);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+    [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
     [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out RECT rect, int size);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int L, T, R, B; }
+
+    private const uint PW_RENDERFULLCONTENT = 0x00000002;
 
     public static IntPtr FindWindowByPid(uint targetPid) {
         IntPtr found = IntPtr.Zero;
@@ -70,10 +74,28 @@ public class HermesCapture {
             uint pid;
             GetWindowThreadProcessId(hWnd, out pid);
             if (pid == targetPid) {
+                StringBuilder cls = new StringBuilder(256);
+                GetClassName(hWnd, cls, 256);
+                if (cls.ToString() == "ConsoleWindowClass") return true;
                 StringBuilder sb = new StringBuilder(256);
                 GetWindowText(hWnd, sb, 256);
                 if (sb.Length > 0) { found = hWnd; return false; }
             }
+            return true;
+        }, IntPtr.Zero);
+        return found;
+    }
+
+    public static IntPtr FindWindowByTitle(string title) {
+        IntPtr found = IntPtr.Zero;
+        EnumWindows((hWnd, lParam) => {
+            if (!IsWindowVisible(hWnd)) return true;
+            StringBuilder cls = new StringBuilder(256);
+            GetClassName(hWnd, cls, 256);
+            if (cls.ToString() == "ConsoleWindowClass") return true;
+            StringBuilder sb = new StringBuilder(256);
+            GetWindowText(hWnd, sb, 256);
+            if (sb.ToString() == title) { found = hWnd; return false; }
             return true;
         }, IntPtr.Zero);
         return found;
@@ -87,8 +109,11 @@ public class HermesCapture {
         int w = r.R - r.L, h = r.B - r.T;
         if (w < 10 || h < 10) return false;
         using (var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb)) {
-            using (var g = Graphics.FromImage(bmp))
-                g.CopyFromScreen(r.L, r.T, 0, 0, new Size(w, h));
+            using (var g = Graphics.FromImage(bmp)) {
+                IntPtr hdc = g.GetHdc();
+                PrintWindow(hwnd, hdc, PW_RENDERFULLCONTENT);
+                g.ReleaseHdc(hdc);
+            }
             bmp.Save(path, ImageFormat.Png);
         }
         return true;
@@ -98,15 +123,16 @@ public class HermesCapture {
 
 function Invoke-Capture([System.Diagnostics.Process]$proc, [string]$path) {
     Start-Sleep -Seconds 4
-    $proc.Refresh()
-    $hwnd = $proc.MainWindowHandle
+    $hwnd = [HermesCapture]::FindWindowByPid([uint32]$proc.Id)
     if ($hwnd -eq [IntPtr]::Zero) {
-        Start-Sleep -Seconds 2
-        $proc.Refresh()
-        $hwnd = $proc.MainWindowHandle
+        $hwnd = [HermesCapture]::FindWindowByTitle("hermes")
     }
     if ($hwnd -eq [IntPtr]::Zero) {
+        Start-Sleep -Seconds 2
         $hwnd = [HermesCapture]::FindWindowByPid([uint32]$proc.Id)
+    }
+    if ($hwnd -eq [IntPtr]::Zero) {
+        $hwnd = [HermesCapture]::FindWindowByTitle("hermes")
     }
     if ($hwnd -ne [IntPtr]::Zero) {
         [HermesCapture]::SetForegroundWindow($hwnd) | Out-Null
@@ -124,10 +150,15 @@ Start-Sleep -Seconds 1
 $configs = Get-ChildItem -Path $TestData -Filter '*.json' | Sort-Object Name
 Write-Host "Capturing $($configs.Count) notifications from $TestData"
 
+$tmpCfg = Join-Path $env:TEMP 'hermes-screenshot-cfg.json'
+
 foreach ($cfg in $configs) {
     $name = $cfg.BaseName
     Write-Host -NoNewline "  [$name] "
-    $p = Start-Process -FilePath $HermesExe -ArgumentList '--local', "`"$($cfg.FullName)`"" -PassThru
+    $json = Get-Content $cfg.FullName -Raw | ConvertFrom-Json
+    $json | Add-Member -NotePropertyName 'dnd' -NotePropertyValue 'ignore' -Force
+    $json | ConvertTo-Json -Depth 10 | Set-Content $tmpCfg -Encoding UTF8
+    $p = Start-Process -FilePath $HermesExe -ArgumentList '--local', "`"$tmpCfg`"" -PassThru
 
     if (Invoke-Capture $p (Join-Path $OutDir "$name.png")) {
         Write-Host 'OK'
@@ -146,6 +177,7 @@ $hero_config = @{
     message      = "A cross-platform notification framework for IT teams.`n`nPowered by Go and Wails v2, Hermes displays rich notifications in a native webview with support for buttons, deferrals, image carousels, and more."
     title        = 'IT Department'
     accent_color  = '#D4A843'
+    dnd          = 'ignore'
     timeout      = 300
     timeout_value = 'defer_1h'
     esc_value     = 'defer_1h'
