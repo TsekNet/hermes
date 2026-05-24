@@ -10,8 +10,17 @@
   var InboxBackend = null;
   var carouselIndex = 0;
   var carouselTotal = 0;
+  var totalTime = 0;
+  var barFill = null;
 
   var validStyles = { primary: true, secondary: true, danger: true };
+
+  var _decodeEl = document.createElement("textarea");
+  function decodeHTMLEntities(s) {
+    if (!s || s.indexOf("&") === -1) return s;
+    _decodeEl.innerHTML = s;
+    return _decodeEl.value;
+  }
 
   function findBackend(method) {
     if (!window.go) return null;
@@ -170,7 +179,7 @@
 
     var heading = document.createElement("span");
     heading.className = "inbox-card-heading";
-    heading.textContent = entry.heading;
+    heading.textContent = decodeHTMLEntities(entry.heading);
     top.appendChild(heading);
 
     if (entry.action_required) {
@@ -178,7 +187,7 @@
       if (primary) {
         var badge = document.createElement("button");
         badge.className = "inbox-card-badge badge-ok badge-action";
-        badge.textContent = primary.label;
+        badge.textContent = decodeHTMLEntities(primary.label);
         badge.setAttribute("data-id", entry.id);
         badge.setAttribute("data-value", primary.value || primary.label.toLowerCase());
         badge.addEventListener("click", onInlineButtonClick);
@@ -193,7 +202,7 @@
     if (entry.message) {
       var msg = document.createElement("div");
       msg.className = "inbox-card-message";
-      msg.textContent = entry.message;
+      msg.textContent = decodeHTMLEntities(entry.message);
       card.appendChild(msg);
     }
 
@@ -286,9 +295,9 @@
       document.documentElement.style.setProperty("--btn-primary-bg", cfg.accent_color);
     }
 
-    document.getElementById("title").textContent = cfg.title || "";
-    document.getElementById("heading").textContent = cfg.heading || "";
-    document.getElementById("message").textContent = cfg.message || "";
+    document.getElementById("title").textContent = decodeHTMLEntities(cfg.title || "");
+    document.getElementById("heading").textContent = decodeHTMLEntities(cfg.heading || "");
+    document.getElementById("message").textContent = decodeHTMLEntities(cfg.message || "");
 
     if (cfg.help_url && /^https?:\/\//i.test(cfg.help_url)) {
       var link = document.getElementById("help-link");
@@ -372,31 +381,23 @@
 
   function initWatchStatus() {
     var el = document.getElementById("watch-status");
-    el.style.display = "flex";
+    el.style.display = "block";
+    el.textContent = "Monitoring filesystem...";
 
-    var dots = document.createElement("span");
-    dots.className = "watch-dots";
-    for (var i = 0; i < 3; i++) {
-      var dot = document.createElement("span");
-      dot.className = "watch-dot";
-      dots.appendChild(dot);
+    var fill = document.getElementById("bar-fill");
+    if (fill && fill.parentNode) {
+      var shimmer = document.createElement("span");
+      shimmer.className = "bar-shimmer";
+      shimmer.id = "bar-shimmer";
+      fill.parentNode.appendChild(shimmer);
     }
-    el.appendChild(dots);
-
-    var text = document.createElement("span");
-    text.className = "watch-text";
-    text.textContent = "Monitoring filesystem...";
-    el.appendChild(text);
 
     if (window.runtime && window.runtime.EventsOn) {
-      var resetTimer = null;
       window.runtime.EventsOn("fs:event", function(ev) {
         var basename = ev.path.split("/").pop().split("\\").pop();
-        text.textContent = ev.op + ": " + basename;
-        if (resetTimer) clearTimeout(resetTimer);
-        resetTimer = setTimeout(function() {
-          text.textContent = "Monitoring filesystem...";
-        }, 3000);
+        el.textContent = ev.op + ": " + basename;
+        var shimmer = document.getElementById("bar-shimmer");
+        if (shimmer) shimmer.classList.add("stopped");
       });
     }
   }
@@ -411,7 +412,7 @@
       } else {
         var el = document.createElement("button");
         el.className = "btn btn-" + (validStyles[btn.style] ? btn.style : "secondary");
-        el.textContent = btn.label;
+        el.textContent = decodeHTMLEntities(btn.label);
         el.setAttribute("data-value", btn.value || btn.label.toLowerCase());
         el.addEventListener("click", onButtonClick);
         container.appendChild(el);
@@ -425,7 +426,7 @@
 
     var trigger = document.createElement("button");
     trigger.className = "btn btn-" + (validStyles[btn.style] ? btn.style : "secondary");
-    trigger.textContent = btn.label + " \u25B4";
+    trigger.textContent = decodeHTMLEntities(btn.label) + " \u25B4";
     trigger.addEventListener("click", function(e) {
       e.stopPropagation();
       wrapper.querySelector(".dropdown-menu").classList.toggle("open");
@@ -438,7 +439,7 @@
       var opt = btn.dropdown[j];
       var item = document.createElement("div");
       item.className = "dropdown-item";
-      item.textContent = opt.label;
+      item.textContent = decodeHTMLEntities(opt.label);
       item.setAttribute("data-value", opt.value || opt.label || "");
       item.addEventListener("click", onButtonClick);
       menu.appendChild(item);
@@ -464,6 +465,12 @@
   }
 
   function startCountdown() {
+    totalTime = remaining;
+    barFill = document.getElementById("bar-fill");
+    var cd = document.getElementById("countdown");
+    cd.setAttribute("role", "progressbar");
+    cd.setAttribute("aria-valuemin", "0");
+    cd.setAttribute("aria-valuemax", String(totalTime));
     updateCountdown();
     timer = setInterval(function() {
       remaining--;
@@ -474,10 +481,20 @@
 
   function updateCountdown() {
     var el = document.getElementById("countdown");
-    if (remaining <= 0) { el.textContent = ""; return; }
+    if (remaining <= 0) {
+      el.textContent = "";
+      if (barFill) barFill.style.transform = "scaleX(0)";
+      return;
+    }
     var m = Math.floor(remaining / 60);
     var s = remaining % 60;
-    el.textContent = "Auto-action in " + m + ":" + (s < 10 ? "0" : "") + s;
+    var label = "Auto-action in " + m + ":" + (s < 10 ? "0" : "") + s;
+    el.textContent = label;
+    el.setAttribute("aria-valuenow", String(remaining));
+    el.setAttribute("aria-valuetext", label);
+    if (barFill && totalTime > 0) {
+      barFill.style.transform = "scaleX(" + (remaining / totalTime) + ")";
+    }
   }
 
   document.addEventListener("click", function() {

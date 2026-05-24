@@ -8,20 +8,33 @@
   "defer_deadline": "7d",
   "max_defers": 5,
   "images": [
-    "https://placehold.co/380x220/1a1a2e/D4A843?text=Update+Overview",
-    "https://placehold.co/380x220/1a1a2e/D4A843?text=Security+Fixes",
-    "https://placehold.co/380x220/1a1a2e/D4A843?text=Timeline"
+    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzODAiIGhlaWdodD0iMjIwIj4KICA8cmVjdCB3aWR0aD0iMzgwIiBoZWlnaHQ9IjIyMCIgZmlsbD0iIzFhMWEyZSIvPgogIDx0ZXh0IHg9IjE5MCIgeT0iMTE1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iI0Q0QTg0MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VXBkYXRlIE92ZXJ2aWV3PC90ZXh0Pgo8L3N2Zz4=",
+    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzODAiIGhlaWdodD0iMjIwIj4KICA8cmVjdCB3aWR0aD0iMzgwIiBoZWlnaHQ9IjIyMCIgZmlsbD0iIzFhMWEyZSIvPgogIDx0ZXh0IHg9IjE5MCIgeT0iMTE1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iI0Q0QTg0MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+U2VjdXJpdHkgRml4ZXM8L3RleHQ+Cjwvc3ZnPg==",
+    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzODAiIGhlaWdodD0iMjIwIj4KICA8cmVjdCB3aWR0aD0iMzgwIiBoZWlnaHQ9IjIyMCIgZmlsbD0iIzFhMWEyZSIvPgogIDx0ZXh0IHg9IjE5MCIgeT0iMTE1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iI0Q0QTg0MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+VGltZWxpbmU8L3RleHQ+Cjwvc3ZnPg=="
   ],
   "buttons": [
     {
       "label": "Defer",
       "style": "secondary",
       "dropdown": [
-        {"label": "1 Hour", "value": "defer_1h"},
-        {"label": "4 Hours", "value": "defer_4h"},
-        {"label": "1 Day", "value": "defer_1d"}
+        {
+          "label": "1 Hour",
+          "value": "defer_1h"
+        },
+        {
+          "label": "4 Hours",
+          "value": "defer_4h"
+        },
+        {
+          "label": "1 Day",
+          "value": "defer_1d"
+        }
       ]
     },
-    {"label": "Update Now", "value": "update", "style": "primary"}
+    {
+      "label": "Update Now",
+      "value": "update",
+      "style": "primary"
+    }
   ]
 }
