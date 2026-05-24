@@ -157,6 +157,10 @@ foreach ($cfg in $configs) {
     Write-Host -NoNewline "  [$name] "
     $json = Get-Content $cfg.FullName -Raw | ConvertFrom-Json
     $json | Add-Member -NotePropertyName 'dnd' -NotePropertyValue 'ignore' -Force
+    if ($name -eq 'localized-restart' -and $json.heading_localized) {
+        $json.heading = $json.heading_localized.ja
+        $json.message = $json.message_localized.ja
+    }
     $json | ConvertTo-Json -Depth 10 | Set-Content $tmpCfg -Encoding UTF8
     $p = Start-Process -FilePath $HermesExe -ArgumentList '--local', "`"$tmpCfg`"" -PassThru
 
