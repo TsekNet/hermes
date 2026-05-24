@@ -255,7 +255,7 @@ hermes/
 ├── frontend/                      The web UI (embedded into binary)
 │   ├── index.html                 Notification layout
 │   ├── style.css                  Dark theme, CSS custom properties
-│   └── main.js                    Countdown, dropdowns, Wails bindings
+│   └── main.js                    Countdown bar, shimmer, dropdowns, Wails bindings
 │
 ├── build/                         Wails build metadata (icons, manifest)
 │   ├── linux/hermes-notifications.desktop  App launcher entry (GNOME/KDE)
@@ -397,10 +397,12 @@ The algorithm uses `WindowCenter()` as a reference point, then derives the notif
 
 The frontend is vanilla HTML/CSS/JS — no framework, no bundler, no node_modules. CSS uses custom properties (`--accent`) set at runtime from `accent_color` in the config.
 
+The accent bar at the top of each notification doubles as a countdown progress indicator: it shrinks left-to-right via `transform: scaleX()` (GPU composited, zero layout recalc over the timeout period). When `watch_paths` is configured, a shimmer animation sweeps across the bar to indicate active filesystem monitoring. The shimmer stops permanently on the first `fs:event`, while the bar continues shrinking. The countdown element carries ARIA `progressbar` attributes for screen reader accessibility. The inbox view uses the same `.accent` element without `.bar-track`, so it renders as a static solid accent line.
+
 JS communicates with Go through Wails runtime bindings:
 
 **Notification view (`App`):**
-- `GetConfig()` — populate heading, message, buttons, images, countdown
+- `GetConfig()` — populate heading, message, buttons, images, countdown bar
 - `DeferralAllowed()` — check if defer buttons should be shown
 - `Ready()` — signal Go to position and show the window
 - `Respond(value)` — send the response (button click or timeout)
@@ -413,7 +415,7 @@ JS communicates with Go through Wails runtime bindings:
 - `Ready()` — center and show the inbox window
 
 Wails event channels:
-- `fs:event` — filesystem change events from the watch package (fields: `path`, `op`)
+- `fs:event` — filesystem change events from the watch package (fields: `path`, `op`). First event stops the accent bar shimmer animation permanently.
 
 ---
 

@@ -82,10 +82,10 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Buttons & dropdowns** | Primary, secondary, danger styles. Dropdown menus for defer options. |
 | **Deferrals** | User can defer N times within a deadline. State persists across restarts. |
 | **Image carousel** | Embed slides/screenshots via HTTPS URLs or data URIs. Arrow key navigation. |
-| **Filesystem watch** | Monitor paths for changes (e.g. wait for install receipt). UI updates live. |
+| **Filesystem watch** | Monitor paths for changes (e.g. wait for install receipt). Shimmer on accent bar indicates active watching, stops on first event. |
 | **Do Not Disturb** | Detects OS Focus/DND mode. Default: wait and retry. Also: skip or ignore. |
 | **Settings URIs** | `uri:ms-settings:windowsupdate` (Windows), `uri:x-apple.systempreferences:...` (macOS). Platform-filtered at runtime. |
-| **Countdown timer** | Auto-action after timeout. Configurable value returned to calling script. |
+| **Countdown timer** | Accent bar shrinks visually over the timeout period (`scaleX`, GPU composited). Auto-action after timeout. |
 | **Inbox / history** | Completed notifications are persisted. View past actions via `hermes inbox` (UI or JSON). Auto-pruned by age and count. |
 | **Offline queue** | Service unreachable? Notification is persisted locally and delivered on next startup. Exit 203. |
 | **Priority** | Control delivery order (0-10). Higher priority notifications drain first. |
