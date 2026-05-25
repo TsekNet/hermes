@@ -153,3 +153,70 @@ func TestPerRPCCredentials(t *testing.T) {
 		t.Error("should not require transport security (localhost only)")
 	}
 }
+
+func TestGenerateToken_Unique(t *testing.T) {
+	dir := t.TempDir()
+	orig := TokenPath
+	TokenPath = func() string { return filepath.Join(dir, "session.token") }
+	t.Cleanup(func() { TokenPath = orig })
+
+	t1, _ := GenerateToken()
+	t2, _ := GenerateToken()
+	if t1 == t2 {
+		t.Error("two generated tokens should differ")
+	}
+}
+
+func TestGenerateToken_CreatesParentDir(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "nested", "deep")
+	orig := TokenPath
+	TokenPath = func() string { return filepath.Join(dir, "session.token") }
+	t.Cleanup(func() { TokenPath = orig })
+
+	_, err := GenerateToken()
+	if err != nil {
+		t.Fatalf("GenerateToken: %v", err)
+	}
+
+	if _, err := os.Stat(dir); err != nil {
+		t.Errorf("parent dir not created: %v", err)
+	}
+}
+
+func TestRemoveToken_Idempotent(t *testing.T) {
+	dir := t.TempDir()
+	orig := TokenPath
+	TokenPath = func() string { return filepath.Join(dir, "session.token") }
+	t.Cleanup(func() { TokenPath = orig })
+
+	RemoveToken()
+	RemoveToken()
+}
+
+func TestLoadToken_TrimsWhitespace(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "session.token")
+	orig := TokenPath
+	TokenPath = func() string { return path }
+	t.Cleanup(func() { TokenPath = orig })
+
+	os.WriteFile(path, []byte("  abc123  \n"), 0600)
+	got, err := LoadToken()
+	if err != nil {
+		t.Fatalf("LoadToken: %v", err)
+	}
+	if got != "abc123" {
+		t.Errorf("LoadToken = %q, want 'abc123'", got)
+	}
+}
+
+func TestTokenPath_ReturnsNonEmpty(t *testing.T) {
+	t.Parallel()
+	p := tokenPath()
+	if p == "" {
+		t.Error("tokenPath() returned empty string")
+	}
+	if !filepath.IsAbs(p) {
+		t.Errorf("tokenPath() = %q, want absolute path", p)
+	}
+}
