@@ -20,13 +20,14 @@ var (
 	procGetWindowRect = modUser32.NewProc("GetWindowRect")
 )
 
-const cornerEllipse = 16
+const cornerEllipse = 20
 
 func applyRoundedCorners(title string) {
 	titlePtr, err := syscall.UTF16PtrFromString(title)
 	if err != nil {
 		return
 	}
+
 	hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(titlePtr)))
 	if hwnd == 0 {
 		deck.Warningf("rounded corners: FindWindowW(%q) returned 0", title)
@@ -36,15 +37,14 @@ func applyRoundedCorners(title string) {
 	var r struct{ Left, Top, Right, Bottom int32 }
 	ret, _, _ := procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&r)))
 	if ret == 0 {
-		deck.Warningf("rounded corners: GetWindowRect failed")
 		return
 	}
 
 	w := uintptr(r.Right - r.Left)
 	h := uintptr(r.Bottom - r.Top)
+
 	hrgn, _, _ := procCreateRoundRectRgn.Call(0, 0, w+1, h+1, cornerEllipse, cornerEllipse)
 	if hrgn == 0 {
-		deck.Warningf("rounded corners: CreateRoundRectRgn failed")
 		return
 	}
 
