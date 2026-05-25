@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/TsekNet/hermes/internal/config"
@@ -99,6 +100,36 @@ func TestShutdown_Idempotent(t *testing.T) {
 	a := New(&config.NotificationConfig{Heading: "H", Message: "M"})
 	a.Shutdown(context.Background())
 	a.Shutdown(context.Background())
+}
+
+func TestRespondAcceptsTimeoutPrefix(t *testing.T) {
+	t.Parallel()
+	cfg := &config.NotificationConfig{
+		Heading:      "H",
+		Message:      "M",
+		TimeoutValue: "restart",
+	}
+	cfg.ApplyDefaults()
+
+	tests := []struct {
+		name string
+		value string
+		want bool
+	}{
+		{"raw value", "restart", true},
+		{"timeout prefixed", "timeout:restart", true},
+		{"unknown raw", "nope", false},
+		{"timeout unknown", "timeout:nope", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			check := strings.TrimPrefix(tt.value, "timeout:")
+			if got := cfg.HasValue(check); got != tt.want {
+				t.Errorf("HasValue(TrimPrefix(%q)) = %v, want %v", tt.value, got, tt.want)
+			}
+		})
+	}
 }
 
 func TestHeight(t *testing.T) {

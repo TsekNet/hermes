@@ -18,11 +18,19 @@ html, body {
   height: 100%;
   overflow: hidden;
   font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg);
+  background: #000;
   color: var(--text);
   user-select: none;
   -webkit-user-select: none;
   font-size: 13px;
+}
+
+.window-frame {
+  position: absolute;
+  inset: 2px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
 }
 
 .accent {

@@ -370,17 +370,17 @@ func runUI(cfg *config.NotificationConfig) {
 	wv2Path := webview2DataPath()
 
 	err := wails.Run(&options.App{
-		Title:         cfg.Title,
-		Width:         app.WindowWidth,
-		Height:        app.Height(cfg),
-		Frameless:     true,
-		AlwaysOnTop:   true,
-		DisableResize: true,
-		StartHidden:   true,
-		AssetServer:   &assetserver.Options{Assets: frontendAssets},
-		OnStartup:     a.Startup,
-		OnShutdown:    a.Shutdown,
-		Bind:          []interface{}{a},
+		Title:            cfg.Title,
+		Width:            app.WindowWidth,
+		Height:           app.Height(cfg),
+		Frameless:        true,
+		AlwaysOnTop:      true,
+		DisableResize:    true,
+		StartHidden:      true,
+		AssetServer:      &assetserver.Options{Assets: frontendAssets},
+		OnStartup:        a.Startup,
+		OnShutdown:       a.Shutdown,
+		Bind:             []interface{}{a},
 		Windows: &wopts.Options{
 			IsZoomControlEnabled: false,
 			WebviewUserDataPath:  wv2Path,
