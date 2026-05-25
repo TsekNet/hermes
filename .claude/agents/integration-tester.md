@@ -20,7 +20,7 @@ Check PATH first, then `build/bin/`. Only build if neither exists or the user ex
 
 ## Test Procedure
 
-1. **Enumerate fixtures**: glob `testdata/*.json`, skip non-JSON files
+1. **Enumerate fixtures**: glob `testdata/examples/*.json`, skip non-JSON files
 2. **Read each fixture**: parse the JSON to extract `timeout`, `timeout_value`, and `buttons`
 3. **Run each fixture**: `hermes --local <path>` with a timeout of `config.timeout + 5` seconds (grace period)
 4. **Capture exit code**: map it against `internal/exitcodes` constants

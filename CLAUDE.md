@@ -60,4 +60,4 @@ Four agents live in `.claude/agents/`. Review agents expect `<diff>` and `<conve
 | `platform-reviewer` | `_windows.go`, `_unix.go`, `_darwin.go`, `_linux.go`, `build/`, `runtime.GOOS` branches |
 | `proto-guardian` | `proto/`, `internal/server`, `internal/client` |
 | `security-auditor` | `internal/action`, `internal/auth`, `internal/ratelimit`, `internal/server`, config changes |
-| `integration-tester` | After code changes, runs `testdata/*.json` fixtures against a local binary, validates exit codes |
+| `integration-tester` | After code changes, runs `testdata/examples/*.json` fixtures against a local binary, validates exit codes |
