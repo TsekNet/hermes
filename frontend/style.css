@@ -324,9 +324,8 @@ html, body {
   border-left: 3px solid var(--accent);
 }
 
-.history-card-resolved {
-  opacity: 0.55;
-}
+.history-card-resolved .history-card-heading { color: var(--text-muted); }
+.history-card-resolved .history-card-message { color: var(--text-muted); }
 
 .history-card-top {
   display: flex;

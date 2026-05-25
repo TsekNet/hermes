@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="hermes logo" width="250"/>
+  <img src="assets/logo.png" alt="hermes logo" width="125"/>
   <h1>hermes</h1>
   <p><strong>Cross-platform web-based notification service.</strong> One binary. One web UI. Every platform.</p>
 

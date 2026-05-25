@@ -9,12 +9,12 @@
       <stop offset="1" stop-color="#C8A030"/>
     </linearGradient>
     <linearGradient id="wingL" x1="180" y1="160" x2="40" y2="280" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E8C848"/>
-      <stop offset="1" stop-color="#C8A030"/>
+      <stop stop-color="#B8922A"/>
+      <stop offset="1" stop-color="#8A6C18"/>
     </linearGradient>
     <linearGradient id="wingR" x1="332" y1="160" x2="472" y2="280" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E8C84C"/>
-      <stop offset="1" stop-color="#C8A030"/>
+      <stop stop-color="#B8922A"/>
+      <stop offset="1" stop-color="#8A6C18"/>
     </linearGradient>
     <linearGradient id="shine" x1="180" y1="100" x2="320" y2="300" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFFDE8" stop-opacity=".9"/>
@@ -52,7 +52,7 @@
     <!-- Bell shadow: lifts bell off wings -->
     <path d="M256 96c-72 0-120 56-120 128v64c0 16-16 32-32 32h304c-16 0-32-16-32-32V224c0-72-48-128-120-128z" fill="#000" fill-opacity=".3" transform="translate(0,4)" filter="url(#bellShadow)"/>
     <!-- Bell body -->
-    <path d="M256 96c-72 0-120 56-120 128v64c0 16-16 32-32 32h304c-16 0-32-16-32-32V224c0-72-48-128-120-128z" fill="url(#gold)"/>
+    <path d="M256 96c-72 0-120 56-120 128v64c0 16-16 32-32 32h304c-16 0-32-16-32-32V224c0-72-48-128-120-128z" fill="url(#gold)" stroke="#1E293B" stroke-width="6"/>
     <!-- Bell base bar -->
     <rect x="96" y="320" width="320" height="24" rx="12" fill="#D4A843"/>
   </g>
