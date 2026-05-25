@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	goRuntime "runtime"
+	"strings"
 	"time"
 
 	"github.com/TsekNet/hermes/internal/config"
@@ -124,11 +125,13 @@ func (a *App) Ready() {
 	deck.Infof("positioning: workarea≈%dx%d window=%dx%d center=(%d,%d) -> (%d,%d)", waW, waH, w, h, cx, cy, x, y)
 	wailsRuntime.WindowSetPosition(a.ctx, x, y)
 	wailsRuntime.WindowShow(a.ctx)
+	applyRoundedCorners(a.cfg.Title)
 }
 
 // Respond handles the user's choice. Opens URIs, runs builtins, sends gRPC, quits.
 func (a *App) Respond(value string) {
-	if !a.cfg.HasValue(value) && !action.IsURI(value) && !action.IsBuiltin(value) {
+	check := strings.TrimPrefix(value, "timeout:")
+	if !a.cfg.HasValue(check) && !action.IsURI(value) && !action.IsBuiltin(value) {
 		deck.Warningf("respond: rejected unknown value %q", value)
 		return
 	}
