@@ -17,24 +17,24 @@ import (
 	wopts "github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
-func inboxCmd() *cobra.Command {
+func historyCmd() *cobra.Command {
 	var (
 		asJSON bool
 		dbPath string
 	)
 	cmd := &cobra.Command{
-		Use:   "inbox",
+		Use:   "history",
 		Short: "View notification history",
 		Long: `Opens the notification history UI showing past notifications, or prints
 history as JSON. Action buttons in the history view re-execute the original
 action (uri: opens the URI, action: runs the built-in verb).`,
-		Example: `  hermes inbox
-  hermes inbox --json`,
+		Example: `  hermes history
+  hermes history --json`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			if asJSON {
-				return printInboxJSON(dbPath)
+				return printHistoryJSON(dbPath)
 			}
-			return runInboxUI(dbPath)
+			return runHistoryUI(dbPath)
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "print history as JSON to stdout")
@@ -42,7 +42,7 @@ action (uri: opens the URI, action: runs the built-in verb).`,
 	return cmd
 }
 
-func printInboxJSON(dbPath string) error {
+func printHistoryJSON(dbPath string) error {
 	entries, err := fetchHistory(dbPath)
 	if err != nil {
 		return err
@@ -52,15 +52,15 @@ func printInboxJSON(dbPath string) error {
 	return enc.Encode(entries)
 }
 
-func runInboxUI(dbPath string) error {
-	var inboxApp *app.InboxApp
+func runHistoryUI(dbPath string) error {
+	var historyApp *app.HistoryApp
 
 	if dbPath != "" {
 		s, err := store.OpenReadOnly(dbPath)
 		if err != nil {
 			return fmt.Errorf("open db: %w", err)
 		}
-		inboxApp = app.NewInboxLocal(s)
+		historyApp = app.NewHistoryLocal(s)
 	} else {
 		c, err := client.Dial()
 		if err != nil {
@@ -69,28 +69,28 @@ func runInboxUI(dbPath string) error {
 			if err != nil {
 				return fmt.Errorf("open db: %w", err)
 			}
-			inboxApp = app.NewInboxLocal(s)
+			historyApp = app.NewHistoryLocal(s)
 		} else {
-			inboxApp = app.NewInbox(c)
+			historyApp = app.NewHistory(c)
 		}
 	}
 
 	return wails.Run(&options.App{
 		Title:         "Notification History",
-		Width:         app.InboxWidth,
-		Height:        app.InboxHeight,
+		Width:         app.HistoryWidth,
+		Height:        app.HistoryHeight,
 		Frameless:     false,
 		DisableResize: false,
 		StartHidden:   false,
 		AssetServer:   &assetserver.Options{Assets: frontendAssets},
-		OnStartup:     inboxApp.Startup,
-		OnShutdown:    inboxApp.Shutdown,
-		Bind:          []interface{}{inboxApp},
+		OnStartup:     historyApp.Startup,
+		OnShutdown:    historyApp.Shutdown,
+		Bind:          []interface{}{historyApp},
 		Windows: &wopts.Options{IsZoomControlEnabled: false, DisableWindowIcon: false},
 	})
 }
 
-func fetchHistory(dbPath string) ([]app.InboxEntry, error) {
+func fetchHistory(dbPath string) ([]app.HistoryEntry, error) {
 	if dbPath != "" {
 		return fetchHistoryFromDB(dbPath)
 	}
@@ -102,7 +102,7 @@ func fetchHistory(dbPath string) ([]app.InboxEntry, error) {
 	return entries, nil
 }
 
-func fetchHistoryFromDB(dbPath string) ([]app.InboxEntry, error) {
+func fetchHistoryFromDB(dbPath string) ([]app.HistoryEntry, error) {
 	s, err := store.OpenReadOnly(dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
@@ -112,17 +112,17 @@ func fetchHistoryFromDB(dbPath string) ([]app.InboxEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]app.InboxEntry, 0, len(records))
+	out := make([]app.HistoryEntry, 0, len(records))
 	for _, r := range records {
 		if r.Config == nil {
 			continue
 		}
-		out = append(out, app.InboxEntryFromRecord(r))
+		out = append(out, app.HistoryEntryFromRecord(r))
 	}
 	return out, nil
 }
 
-func fetchHistoryFromService() ([]app.InboxEntry, error) {
+func fetchHistoryFromService() ([]app.HistoryEntry, error) {
 	c, err := client.Dial()
 	if err != nil {
 		return nil, fmt.Errorf("connect to service: %w", err)
@@ -132,9 +132,9 @@ func fetchHistoryFromService() ([]app.InboxEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]app.InboxEntry, len(entries))
+	out := make([]app.HistoryEntry, len(entries))
 	for i, e := range entries {
-		out[i] = app.InboxEntryFromClientEntry(e)
+		out[i] = app.HistoryEntryFromClientEntry(e)
 	}
 	return out, nil
 }

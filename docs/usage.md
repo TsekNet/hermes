@@ -24,29 +24,29 @@ hermes list
 hermes cancel <notification-id>
 
 # View notification history
-hermes inbox
+hermes history
 
 # Print history as JSON
-hermes inbox --json
+hermes history --json
 ```
 
 ---
 
-## Inbox (notification history)
+## History (notification history)
 
-The inbox shows all notifications: active items that need your attention appear at the top with inline action buttons, completed notifications appear below in a grayed-out style. Clicking an inline button (e.g. "Restart Now") sends the response to the service and immediately grays out the card. The inbox polls for updates every 3 seconds, so actions taken in popup windows are reflected automatically.
+The history view shows all notifications: active items that need your attention appear at the top with inline action buttons, completed notifications appear below in a grayed-out style. Clicking an inline button (e.g. "Restart Now") sends the response to the service and immediately grays out the card. The history view polls for updates every 3 seconds, so actions taken in popup windows are reflected automatically.
 
 ```bash
-hermes inbox              # Opens the inbox UI
-hermes inbox --json       # Prints history as JSON to stdout
-hermes inbox --db my.db   # Read directly from a bolt DB file (skip service)
+hermes history              # Opens the history UI
+hermes history --json       # Prints history as JSON to stdout
+hermes history --db my.db   # Read directly from a bolt DB file (skip service)
 ```
 
-The inbox connects to the running service via gRPC. If the service is unreachable, it falls back to reading the bolt database directly. History is auto-pruned on service startup: records older than 30 days or exceeding 50 entries are removed.
+The history view connects to the running service via gRPC. If the service is unreachable, it falls back to reading the bolt database directly. History is auto-pruned on service startup: records older than 30 days or exceeding 50 entries are removed.
 
 ### App launcher shortcut
 
-Platform installers create a **Hermes Notifications** shortcut so users can find the inbox without knowing the CLI:
+Platform installers create a **Hermes Notifications** shortcut so users can find the history view without knowing the CLI:
 
 | Platform | Location | Search keywords |
 |---|---|---|
@@ -366,8 +366,8 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `hermes notify [config]` | Send notification to service (blocks for result). Broadcasts when run as SYSTEM/root ([details](broadcast.md)). |
 | `hermes list` | List active notifications |
 | `hermes cancel <id>` | Cancel an active notification |
-| `hermes inbox` | View notification history (opens inbox UI) |
-| `hermes inbox --json` | Print notification history as JSON to stdout |
+| `hermes history` | View notification history (opens history UI) |
+| `hermes history --json` | Print notification history as JSON to stdout |
 | `hermes install` | Configure MOTD hook and launch daemon in active user sessions (when elevated). Called by package postinstall. |
 | `hermes uninstall` | Remove MOTD hook. Called by package removal scripts. |
 | `hermes stop` | Graceful daemon shutdown (gRPC then fallback kill) |
@@ -385,8 +385,8 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `--local` | root | Render locally in current session (skip service) |
 | `--locale <code>` | root | Override locale for localized notifications (e.g. `ja`, `de`) |
 | `--no-tray` | serve | Disable the system tray icon (default: auto-detect display server) |
-| `--db <path>` | serve, inbox, motd | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
-| `--json` | inbox | Print history as JSON instead of opening the UI |
+| `--db <path>` | serve, history, motd | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
+| `--json` | history | Print history as JSON instead of opening the UI |
 | `--help` | all | Print help |
 
 ---

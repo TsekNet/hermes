@@ -50,10 +50,10 @@ func TestBuildRootCmd_SubcommandErrors(t *testing.T) {
 		}
 	})
 
-	t.Run("inbox JSON", func(t *testing.T) {
-		dbPath := filepath.Join(t.TempDir(), "inbox-cmd.db")
+	t.Run("history JSON", func(t *testing.T) {
+		dbPath := filepath.Join(t.TempDir(), "history-cmd.db")
 		cmd := buildRootCmd()
-		cmd.SetArgs([]string{"inbox", "--json", "--db", dbPath})
+		cmd.SetArgs([]string{"history", "--json", "--db", dbPath})
 		cmd.Execute()
 	})
 }
@@ -85,7 +85,7 @@ func TestBuildRootCmd(t *testing.T) {
 	}
 
 	wantSubs := []string{"demo", "version", "serve", "notify", "list",
-		"cancel", "inbox", "stop", "motd", "install", "uninstall"}
+		"cancel", "history", "stop", "motd", "install", "uninstall"}
 	gotSubs := make(map[string]bool)
 	for _, sub := range cmd.Commands() {
 		gotSubs[sub.Name()] = true

@@ -143,7 +143,7 @@ func (s *Store) LoadAll() ([]*Record, error) {
 	return records, err
 }
 
-// HistoryRecord stores a completed notification for the inbox.
+// HistoryRecord stores a completed notification for history.
 type HistoryRecord struct {
 	ID            string                     `json:"id"`
 	Config        *config.NotificationConfig `json:"config"`

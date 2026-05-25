@@ -30,7 +30,7 @@ service HermesService {
   rpc List(ListRequest) returns (ListResponse);
 
   // ListHistory returns completed notification history.
-  // Called by: hermes inbox
+  // Called by: hermes history
   rpc ListHistory(ListHistoryRequest) returns (ListHistoryResponse);
 
   // Shutdown requests a graceful daemon shutdown.

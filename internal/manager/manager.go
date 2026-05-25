@@ -330,10 +330,10 @@ func (m *Manager) ListHistory() []*store.HistoryRecord {
 	return records
 }
 
-// ListForInbox returns active notifications as HistoryRecords with sentinel
-// values (empty ResponseValue, zero CompletedAt) so the inbox UI can render
+// ListForHistory returns active notifications as HistoryRecords with sentinel
+// values (empty ResponseValue, zero CompletedAt) so the history UI can render
 // them alongside completed history. Active items are sorted newest first.
-func (m *Manager) ListForInbox() []*store.HistoryRecord {
+func (m *Manager) ListForHistory() []*store.HistoryRecord {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

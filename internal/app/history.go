@@ -14,50 +14,50 @@ import (
 )
 
 const (
-	InboxWidth  = 480
-	InboxHeight = 520
+	HistoryWidth  = 480
+	HistoryHeight = 520
 )
 
-// InboxButton is the JSON shape for an inline action button.
-type InboxButton struct {
+// HistoryButton is the JSON shape for an inline action button.
+type HistoryButton struct {
 	Label string `json:"label"`
 	Value string `json:"value"`
 	Style string `json:"style,omitempty"`
 }
 
-// InboxEntry is the JSON shape sent to the inbox frontend.
-type InboxEntry struct {
-	ID             string        `json:"id"`
-	Heading        string        `json:"heading"`
-	Message        string        `json:"message"`
-	Source         string        `json:"source"`
-	ResponseValue  string        `json:"response_value"`
-	CreatedAt      string        `json:"created_at"`
-	CompletedAt    string        `json:"completed_at"`
-	ActionRequired bool          `json:"action_required"`
-	Buttons        []InboxButton `json:"buttons,omitempty"`
+// HistoryEntry is the JSON shape sent to the history frontend.
+type HistoryEntry struct {
+	ID             string          `json:"id"`
+	Heading        string          `json:"heading"`
+	Message        string          `json:"message"`
+	Source         string          `json:"source"`
+	ResponseValue  string          `json:"response_value"`
+	CreatedAt      string          `json:"created_at"`
+	CompletedAt    string          `json:"completed_at"`
+	ActionRequired bool            `json:"action_required"`
+	Buttons        []HistoryButton `json:"buttons,omitempty"`
 }
 
-// InboxApp is the Wails backend for the inbox view.
-type InboxApp struct {
+// HistoryApp is the Wails backend for the history view.
+type HistoryApp struct {
 	ctx        context.Context
 	grpcClient *client.Client
 	localStore *store.Store
 }
 
-// NewInbox creates an InboxApp that reads history from the gRPC service.
-func NewInbox(c *client.Client) *InboxApp {
-	return &InboxApp{grpcClient: c}
+// NewHistory creates a HistoryApp that reads history from the gRPC service.
+func NewHistory(c *client.Client) *HistoryApp {
+	return &HistoryApp{grpcClient: c}
 }
 
-// NewInboxLocal creates an InboxApp that reads history directly from the store.
-func NewInboxLocal(s *store.Store) *InboxApp {
-	return &InboxApp{localStore: s}
+// NewHistoryLocal creates a HistoryApp that reads history directly from the store.
+func NewHistoryLocal(s *store.Store) *HistoryApp {
+	return &HistoryApp{localStore: s}
 }
 
-func (a *InboxApp) Startup(ctx context.Context) { a.ctx = ctx }
+func (a *HistoryApp) Startup(ctx context.Context) { a.ctx = ctx }
 
-func (a *InboxApp) Shutdown(_ context.Context) {
+func (a *HistoryApp) Shutdown(_ context.Context) {
 	if a.grpcClient != nil {
 		a.grpcClient.Close()
 	}
@@ -66,22 +66,22 @@ func (a *InboxApp) Shutdown(_ context.Context) {
 	}
 }
 
-func (a *InboxApp) Ready() {
+func (a *HistoryApp) Ready() {
 	wailsRuntime.WindowCenter(a.ctx)
 	wailsRuntime.WindowShow(a.ctx)
 }
 
-// GetHistory returns inbox entries for the frontend.
-func (a *InboxApp) GetHistory() []InboxEntry {
+// GetHistory returns history entries for the frontend.
+func (a *HistoryApp) GetHistory() []HistoryEntry {
 	if a.grpcClient != nil {
 		return a.historyFromGRPC()
 	}
 	return a.historyFromStore()
 }
 
-// InboxEntryFromRecord converts a store.HistoryRecord to an InboxEntry.
-func InboxEntryFromRecord(r *store.HistoryRecord) InboxEntry {
-	return InboxEntry{
+// HistoryEntryFromRecord converts a store.HistoryRecord to a HistoryEntry.
+func HistoryEntryFromRecord(r *store.HistoryRecord) HistoryEntry {
+	return HistoryEntry{
 		ID:            r.ID,
 		Heading:       r.Config.Heading,
 		Message:       r.Config.Message,
@@ -92,9 +92,9 @@ func InboxEntryFromRecord(r *store.HistoryRecord) InboxEntry {
 	}
 }
 
-// InboxEntryFromClientEntry converts a client.HistoryEntry to an InboxEntry.
-func InboxEntryFromClientEntry(e client.HistoryEntry) InboxEntry {
-	entry := InboxEntry{
+// HistoryEntryFromClientEntry converts a client.HistoryEntry to a HistoryEntry.
+func HistoryEntryFromClientEntry(e client.HistoryEntry) HistoryEntry {
+	entry := HistoryEntry{
 		ID:             e.ID,
 		Heading:        e.Heading,
 		Message:        e.Message,
@@ -108,7 +108,7 @@ func InboxEntryFromClientEntry(e client.HistoryEntry) InboxEntry {
 		var cfg config.NotificationConfig
 		if err := json.Unmarshal(e.ConfigJSON, &cfg); err == nil {
 			for _, b := range cfg.Buttons {
-				entry.Buttons = append(entry.Buttons, InboxButton{
+				entry.Buttons = append(entry.Buttons, HistoryButton{
 					Label: b.Label,
 					Value: b.Value,
 					Style: b.Style,
@@ -121,7 +121,7 @@ func InboxEntryFromClientEntry(e client.HistoryEntry) InboxEntry {
 
 // RespondToNotification sends a user choice for an active notification.
 // Returns "ok" on success or an error string.
-func (a *InboxApp) RespondToNotification(id, value string) string {
+func (a *HistoryApp) RespondToNotification(id, value string) string {
 	if a.grpcClient == nil {
 		return "error: no service connection"
 	}
@@ -129,25 +129,25 @@ func (a *InboxApp) RespondToNotification(id, value string) string {
 	defer cancel()
 	accepted, err := a.grpcClient.ReportChoice(ctx, id, value)
 	if err != nil {
-		deck.Errorf("inbox: report choice %s=%s: %v", id, value, err)
+		deck.Errorf("history: report choice %s=%s: %v", id, value, err)
 		return "error: " + err.Error()
 	}
 	if !accepted {
 		return "error: choice not accepted"
 	}
-	deck.Infof("inbox: responded to %s with %s", id, value)
+	deck.Infof("history: responded to %s with %s", id, value)
 	return "ok"
 }
 
 // RunAction re-opens a uri:-prefixed value from history. Only uri: is
-// supported from the inbox: re-running action:reboot from history would
+// supported from history: re-running action:reboot from history would
 // be a footgun.
-func (a *InboxApp) RunAction(id, value string) string {
-	deck.Infof("inbox: action %s -> %s", id, value)
+func (a *HistoryApp) RunAction(id, value string) string {
+	deck.Infof("history: action %s -> %s", id, value)
 	if action.IsURI(value) {
 		uri := value[len("uri:"):]
 		if err := action.OpenURI(uri); err != nil {
-			deck.Errorf("inbox: open URI failed: %v", err)
+			deck.Errorf("history: open URI failed: %v", err)
 			return "error: " + err.Error()
 		}
 		return "ok"
@@ -155,36 +155,36 @@ func (a *InboxApp) RunAction(id, value string) string {
 	return value
 }
 
-func (a *InboxApp) historyFromGRPC() []InboxEntry {
+func (a *HistoryApp) historyFromGRPC() []HistoryEntry {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	entries, err := a.grpcClient.ListHistory(ctx)
 	if err != nil {
-		deck.Errorf("inbox: list history rpc: %v", err)
+		deck.Errorf("history: list history rpc: %v", err)
 		return nil
 	}
-	out := make([]InboxEntry, len(entries))
+	out := make([]HistoryEntry, len(entries))
 	for i, e := range entries {
-		out[i] = InboxEntryFromClientEntry(e)
+		out[i] = HistoryEntryFromClientEntry(e)
 	}
 	return out
 }
 
-func (a *InboxApp) historyFromStore() []InboxEntry {
+func (a *HistoryApp) historyFromStore() []HistoryEntry {
 	if a.localStore == nil {
 		return nil
 	}
 	records, err := a.localStore.LoadHistory()
 	if err != nil {
-		deck.Errorf("inbox: load history: %v", err)
+		deck.Errorf("history: load history: %v", err)
 		return nil
 	}
-	out := make([]InboxEntry, 0, len(records))
+	out := make([]HistoryEntry, 0, len(records))
 	for _, r := range records {
 		if r.Config == nil {
 			continue
 		}
-		out = append(out, InboxEntryFromRecord(r))
+		out = append(out, HistoryEntryFromRecord(r))
 	}
 	return out
 }

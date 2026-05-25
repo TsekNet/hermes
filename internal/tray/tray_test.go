@@ -31,7 +31,7 @@ func TestFormatTooltip(t *testing.T) {
 	}
 }
 
-func TestFormatInboxLabel(t *testing.T) {
+func TestFormatHistoryLabel(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -48,8 +48,8 @@ func TestFormatInboxLabel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got := FormatInboxLabel(tt.count); got != tt.want {
-				t.Errorf("FormatInboxLabel(%d) = %q, want %q", tt.count, got, tt.want)
+			if got := FormatHistoryLabel(tt.count); got != tt.want {
+				t.Errorf("FormatHistoryLabel(%d) = %q, want %q", tt.count, got, tt.want)
 			}
 		})
 	}
@@ -93,16 +93,16 @@ func TestShouldEnable(t *testing.T) {
 	}
 }
 
-func TestInboxArgs(t *testing.T) {
+func TestHistoryArgs(t *testing.T) {
 	t.Parallel()
-	got := InboxArgs()
-	want := []string{"inbox"}
+	got := HistoryArgs()
+	want := []string{"history"}
 	if len(got) != len(want) {
-		t.Fatalf("InboxArgs() len = %d, want %d", len(got), len(want))
+		t.Fatalf("HistoryArgs() len = %d, want %d", len(got), len(want))
 	}
 	for i := range got {
 		if got[i] != want[i] {
-			t.Errorf("InboxArgs()[%d] = %q, want %q", i, got[i], want[i])
+			t.Errorf("HistoryArgs()[%d] = %q, want %q", i, got[i], want[i])
 		}
 	}
 }

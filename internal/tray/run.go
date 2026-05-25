@@ -40,11 +40,11 @@ func onReady(cfg Config) {
 	systray.SetTitle("")
 	systray.SetTooltip(FormatTooltip(0))
 
-	mInbox := systray.AddMenuItem("Notification History", "View notification history")
+	mHistory := systray.AddMenuItem("Notification History", "View notification history")
 	systray.AddSeparator()
 	mQuit := systray.AddMenuItem("Quit Hermes", "Stop the notification service")
 
-	go pollCount(cfg.Count, mInbox, cfg.done)
+	go pollCount(cfg.Count, mHistory, cfg.done)
 
 	if cfg.Ready != nil {
 		close(cfg.Ready)
@@ -52,8 +52,8 @@ func onReady(cfg Config) {
 
 	for {
 		select {
-		case <-mInbox.ClickedCh:
-			launchInbox()
+		case <-mHistory.ClickedCh:
+			launchHistory()
 		case <-mQuit.ClickedCh:
 			deck.Info("tray: quit requested by user")
 			if cfg.Stop != nil {
@@ -65,7 +65,7 @@ func onReady(cfg Config) {
 	}
 }
 
-func pollCount(countFn CountFunc, mInbox *systray.MenuItem, done <-chan struct{}) {
+func pollCount(countFn CountFunc, mHistory *systray.MenuItem, done <-chan struct{}) {
 	base := iconData
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -76,31 +76,31 @@ func pollCount(countFn CountFunc, mInbox *systray.MenuItem, done <-chan struct{}
 		case <-ticker.C:
 			count := countFn()
 			systray.SetTooltip(FormatTooltip(count))
-			mInbox.SetTitle(FormatInboxLabel(count))
+			mHistory.SetTitle(FormatHistoryLabel(count))
 			systray.SetIcon(BadgeIcon(base, count))
 		}
 	}
 }
 
-// launchInbox starts the inbox UI as a detached subprocess.
+// launchHistory starts the history UI as a detached subprocess.
 // Uses os.Executable to avoid PATH injection (red team: attacker-controlled
 // PATH could plant a malicious "hermes" binary).
-func launchInbox() {
+func launchHistory() {
 	selfPath, err := os.Executable()
 	if err != nil {
 		deck.Errorf("tray: cannot determine executable path: %v", err)
 		return
 	}
 
-	args := InboxArgs()
+	args := HistoryArgs()
 	cmd := exec.Command(selfPath, args...)
 	detachProcess(cmd)
 
 	if err := cmd.Start(); err != nil {
-		deck.Errorf("tray: launch inbox: %v", err)
+		deck.Errorf("tray: launch history: %v", err)
 		return
 	}
-	deck.Infof("tray: launched inbox (pid %d)", cmd.Process.Pid)
+	deck.Infof("tray: launched history (pid %d)", cmd.Process.Pid)
 }
 
 // detachProcess is implemented in detach_unix.go / detach_windows.go.

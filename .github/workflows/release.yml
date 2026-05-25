@@ -181,7 +181,7 @@ jobs:
           # Build .app bundle for Spotlight discoverability
           APP="$PKGROOT/Applications/Hermes Notifications.app"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-          printf '#!/bin/sh\nexec /usr/local/bin/hermes inbox "$@"\n' > "$APP/Contents/MacOS/launcher"
+          printf '#!/bin/sh\nexec /usr/local/bin/hermes history "$@"\n' > "$APP/Contents/MacOS/launcher"
           chmod 755 "$APP/Contents/MacOS/launcher"
 
           # Generate .icns from source PNG

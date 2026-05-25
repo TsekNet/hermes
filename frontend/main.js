@@ -7,7 +7,7 @@
   var responded = false;
   var timer = null;
   var Backend = null;
-  var InboxBackend = null;
+  var HistoryBackend = null;
   var carouselIndex = 0;
   var carouselTotal = 0;
   var totalTime = 0;
@@ -36,16 +36,16 @@
   }
 
   function init() {
-    InboxBackend = findBackend("GetHistory");
-    if (InboxBackend) { initInbox(); return; }
+    HistoryBackend = findBackend("GetHistory");
+    if (HistoryBackend) { initHistory(); return; }
     Backend = findBackend("GetConfig");
     if (Backend) { Backend.GetConfig().then(configure); return; }
 
     var attempts = 0;
     var poll = setInterval(function() {
       attempts++;
-      InboxBackend = findBackend("GetHistory");
-      if (InboxBackend) { clearInterval(poll); initInbox(); return; }
+      HistoryBackend = findBackend("GetHistory");
+      if (HistoryBackend) { clearInterval(poll); initHistory(); return; }
       Backend = findBackend("GetConfig");
       if (Backend) { clearInterval(poll); Backend.GetConfig().then(configure); return; }
       if (attempts > 50) clearInterval(poll);
@@ -56,19 +56,19 @@
   var pollTimer = null;
   var knownEntries = {};
 
-  function initInbox() {
+  function initHistory() {
     document.body.innerHTML = "";
-    document.body.className = "inbox-body";
+    document.body.className = "history-body";
 
     var accent = document.createElement("div");
     accent.className = "accent";
     document.body.appendChild(accent);
 
     var container = document.createElement("div");
-    container.className = "inbox-container";
+    container.className = "history-container";
 
     var header = document.createElement("div");
-    header.className = "inbox-header";
+    header.className = "history-header";
     var title = document.createElement("span");
     title.className = "title-text";
     title.textContent = "NOTIFICATION HISTORY";
@@ -76,34 +76,34 @@
     container.appendChild(header);
 
     var list = document.createElement("div");
-    list.className = "inbox-list";
-    list.id = "inbox-list";
+    list.className = "history-list";
+    list.id = "history-list";
     container.appendChild(list);
 
     document.body.appendChild(container);
 
-    InboxBackend.GetHistory().then(function(entries) {
-      renderInbox(entries || []);
-      InboxBackend.Ready();
-      startInboxPoll();
+    HistoryBackend.GetHistory().then(function(entries) {
+      renderHistory(entries || []);
+      HistoryBackend.Ready();
+      startHistoryPoll();
     }).catch(function(err) {
       console.error("GetHistory failed:", err);
-      var list = document.getElementById("inbox-list");
+      var list = document.getElementById("history-list");
       list.textContent = "Error loading history: " + err;
-      InboxBackend.Ready();
+      HistoryBackend.Ready();
     });
   }
 
-  function startInboxPoll() {
+  function startHistoryPoll() {
     if (pollTimer) return;
     pollTimer = setInterval(function() {
-      InboxBackend.GetHistory().then(function(entries) {
-        refreshInbox(entries || []);
+      HistoryBackend.GetHistory().then(function(entries) {
+        refreshHistory(entries || []);
       }).catch(function() {});
     }, POLL_INTERVAL_MS);
   }
 
-  function refreshInbox(entries) {
+  function refreshHistory(entries) {
     var newMap = {};
     for (var i = 0; i < entries.length; i++) {
       newMap[entries[i].id] = entries[i];
@@ -119,10 +119,10 @@
 
     for (var id in newMap) {
       if (!knownEntries[id]) {
-        var list = document.getElementById("inbox-list");
-        var empty = list.querySelector(".inbox-empty");
+        var list = document.getElementById("history-list");
+        var empty = list.querySelector(".history-empty");
         if (empty) empty.remove();
-        var card = buildInboxCard(newMap[id]);
+        var card = buildHistoryCard(newMap[id]);
         list.insertBefore(card, list.firstChild);
       }
     }
@@ -132,25 +132,25 @@
 
   function resolveCard(id, responseValue) {
     var card = document.querySelector('[data-notification-id="' + id + '"]');
-    if (!card || card.classList.contains("inbox-card-resolved")) return;
-    card.classList.add("inbox-card-resolved");
-    card.classList.remove("inbox-card-active");
+    if (!card || card.classList.contains("history-card-resolved")) return;
+    card.classList.add("history-card-resolved");
+    card.classList.remove("history-card-active");
 
-    var oldBadge = card.querySelector(".inbox-card-badge");
+    var oldBadge = card.querySelector(".history-card-badge");
     if (oldBadge) {
       var label = (responseValue || "completed").replace(/_/g, " ");
       var span = document.createElement("span");
-      span.className = "inbox-card-badge badge-ok";
+      span.className = "history-card-badge badge-ok";
       span.textContent = label.charAt(0).toUpperCase() + label.slice(1);
       oldBadge.parentNode.replaceChild(span, oldBadge);
     }
   }
 
-  function renderInbox(entries) {
-    var list = document.getElementById("inbox-list");
+  function renderHistory(entries) {
+    var list = document.getElementById("history-list");
     if (entries.length === 0) {
       var empty = document.createElement("div");
-      empty.className = "inbox-empty";
+      empty.className = "history-empty";
       empty.textContent = "No notification history";
       list.appendChild(empty);
       return;
@@ -159,26 +159,26 @@
     knownEntries = {};
     for (var i = 0; i < entries.length; i++) {
       knownEntries[entries[i].id] = entries[i];
-      list.appendChild(buildInboxCard(entries[i]));
+      list.appendChild(buildHistoryCard(entries[i]));
     }
   }
 
-  function buildInboxCard(entry) {
+  function buildHistoryCard(entry) {
     var card = document.createElement("div");
-    card.className = "inbox-card";
+    card.className = "history-card";
     card.setAttribute("data-notification-id", entry.id);
 
     if (entry.action_required) {
-      card.classList.add("inbox-card-active");
+      card.classList.add("history-card-active");
     } else {
-      card.classList.add("inbox-card-resolved");
+      card.classList.add("history-card-resolved");
     }
 
     var top = document.createElement("div");
-    top.className = "inbox-card-top";
+    top.className = "history-card-top";
 
     var heading = document.createElement("span");
-    heading.className = "inbox-card-heading";
+    heading.className = "history-card-heading";
     heading.textContent = decodeHTMLEntities(entry.heading);
     top.appendChild(heading);
 
@@ -186,7 +186,7 @@
       var primary = findPrimaryButton(entry.buttons);
       if (primary) {
         var badge = document.createElement("button");
-        badge.className = "inbox-card-badge badge-ok badge-action";
+        badge.className = "history-card-badge badge-ok badge-action";
         badge.textContent = decodeHTMLEntities(primary.label);
         badge.setAttribute("data-id", entry.id);
         badge.setAttribute("data-value", primary.value || primary.label.toLowerCase());
@@ -201,13 +201,13 @@
 
     if (entry.message) {
       var msg = document.createElement("div");
-      msg.className = "inbox-card-message";
+      msg.className = "history-card-message";
       msg.textContent = decodeHTMLEntities(entry.message);
       card.appendChild(msg);
     }
 
     var meta = document.createElement("div");
-    meta.className = "inbox-card-meta";
+    meta.className = "history-card-meta";
     var parts = [];
     if (entry.source) parts.push(entry.source);
     if (entry.action_required) {
@@ -228,7 +228,7 @@
         && entry.response_value !== "cancelled" && entry.response_value.indexOf("timeout") !== 0;
 
     var badge = document.createElement(actionable ? "button" : "span");
-    badge.className = "inbox-card-badge";
+    badge.className = "history-card-badge";
     var label = (entry.response_value || "").replace(/_/g, " ");
     badge.textContent = label.charAt(0).toUpperCase() + label.slice(1);
     if (entry.response_value === "dismiss" || entry.response_value === "cancelled") {
@@ -248,7 +248,7 @@
         var val = b.getAttribute("data-value");
         b.disabled = true;
         b.textContent = "Running...";
-        InboxBackend.RunAction(id, val).then(function(result) {
+        HistoryBackend.RunAction(id, val).then(function(result) {
           b.textContent = result === "ok" ? "Done" : result;
         }).catch(function() {
           b.textContent = "Failed";
@@ -274,7 +274,7 @@
     btn.disabled = true;
     btn.textContent = "Sending...";
 
-    InboxBackend.RespondToNotification(id, value).then(function(result) {
+    HistoryBackend.RespondToNotification(id, value).then(function(result) {
       if (result === "ok") {
         resolveCard(id, value);
       } else {

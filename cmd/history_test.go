@@ -110,10 +110,10 @@ func TestFetchHistoryFromDB(t *testing.T) {
 	})
 }
 
-func TestPrintInboxJSON(t *testing.T) {
+func TestPrintHistoryJSON(t *testing.T) {
 	t.Parallel()
 
-	dbPath := filepath.Join(t.TempDir(), "inbox.db")
+	dbPath := filepath.Join(t.TempDir(), "history.db")
 	s, err := store.Open(dbPath)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
@@ -126,11 +126,11 @@ func TestPrintInboxJSON(t *testing.T) {
 	})
 	s.Close()
 
-	// printInboxJSON writes to os.Stdout. We verify it doesn't error.
+	// printHistoryJSON writes to os.Stdout. We verify it doesn't error.
 	// A full stdout capture would require os.Pipe; verifying no error is sufficient.
-	err = printInboxJSON(dbPath)
+	err = printHistoryJSON(dbPath)
 	if err != nil {
-		t.Fatalf("printInboxJSON: %v", err)
+		t.Fatalf("printHistoryJSON: %v", err)
 	}
 }
 

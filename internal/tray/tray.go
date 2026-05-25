@@ -34,8 +34,8 @@ func FormatTooltip(count int) string {
 	}
 }
 
-// FormatInboxLabel returns the tray menu label, appending the count when active.
-func FormatInboxLabel(count int) string {
+// FormatHistoryLabel returns the tray menu label, appending the count when active.
+func FormatHistoryLabel(count int) string {
 	if count <= 0 {
 		return "Notification History"
 	}
@@ -58,7 +58,7 @@ func ShouldEnable(goos string, envLookup func(string) string) bool {
 	}
 }
 
-// InboxArgs returns the command-line arguments for launching the inbox subprocess.
-func InboxArgs() []string {
-	return []string{"inbox"}
+// HistoryArgs returns the command-line arguments for launching the history subprocess.
+func HistoryArgs() []string {
+	return []string{"history"}
 }

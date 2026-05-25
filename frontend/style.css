@@ -278,27 +278,27 @@ html, body {
   margin-top: 4px;
 }
 
-/* --- Inbox --- */
+/* --- History --- */
 
-.inbox-body {
+.history-body {
   overflow: hidden;
 }
 
-.inbox-container {
+.history-container {
   display: flex;
   flex-direction: column;
   height: calc(100% - 3px);
   padding: 12px 14px 8px;
 }
 
-.inbox-header {
+.history-header {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
   --wails-draggable: drag;
 }
 
-.inbox-list {
+.history-list {
   flex: 1;
   overflow-y: auto;
   display: flex;
@@ -307,12 +307,12 @@ html, body {
   min-height: 0;
 }
 
-.inbox-list::-webkit-scrollbar { width: 8px; }
-.inbox-list::-webkit-scrollbar-track { background: var(--bg); border-radius: 4px; }
-.inbox-list::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
-.inbox-list::-webkit-scrollbar-thumb:hover { background: var(--text); }
+.history-list::-webkit-scrollbar { width: 8px; }
+.history-list::-webkit-scrollbar-track { background: var(--bg); border-radius: 4px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 4px; }
+.history-list::-webkit-scrollbar-thumb:hover { background: var(--text); }
 
-.inbox-card {
+.history-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -320,28 +320,28 @@ html, body {
   transition: opacity 0.3s, border-color 0.3s;
 }
 
-.inbox-card-active {
+.history-card-active {
   border-left: 3px solid var(--accent);
 }
 
-.inbox-card-resolved {
+.history-card-resolved {
   opacity: 0.55;
 }
 
-.inbox-card-top {
+.history-card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 3px;
 }
 
-.inbox-card-heading {
+.history-card-heading {
   font-size: 12px;
   font-weight: 600;
   color: #fff;
 }
 
-.inbox-card-badge {
+.history-card-badge {
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 2px;
@@ -355,14 +355,14 @@ html, body {
 .badge-warn { background: rgba(241,196,15,0.2); color: #f1c40f; }
 
 
-.inbox-card-message {
+.history-card-message {
   font-size: 11px;
   color: var(--text);
   line-height: 1.35;
   margin-bottom: 4px;
 }
 
-.inbox-card-meta {
+.history-card-meta {
   font-size: 10px;
   color: var(--text-muted);
 }
@@ -377,7 +377,7 @@ html, body {
 .badge-action:disabled { opacity: 0.5; cursor: default; }
 
 
-.inbox-empty {
+.history-empty {
   display: flex;
   align-items: center;
   justify-content: center;

@@ -46,9 +46,9 @@ hermes --config notification.json
 # List active notifications
 hermes list
 
-# View notification history (inbox)
-hermes inbox
-hermes inbox --json
+# View notification history
+hermes history
+hermes history --json
 
 # Show a demo notification (no service needed)
 hermes demo
@@ -86,7 +86,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Do Not Disturb** | Detects OS Focus/DND mode. Default: wait and retry. Also: skip or ignore. |
 | **Settings URIs** | `uri:ms-settings:windowsupdate` (Windows), `uri:x-apple.systempreferences:...` (macOS). Platform-filtered at runtime. |
 | **Countdown timer** | Accent bar shrinks visually over the timeout period (`scaleX`, GPU composited). Auto-action after timeout. |
-| **Inbox / history** | Completed notifications are persisted. View past actions via `hermes inbox` (UI or JSON). Auto-pruned by age and count. |
+| **History** | Completed notifications are persisted. View past actions via `hermes history` (UI or JSON). Auto-pruned by age and count. |
 | **Offline queue** | Service unreachable? Notification is persisted locally and delivered on next startup. Exit 203. |
 | **Priority** | Control delivery order (0-10). Higher priority notifications drain first. |
 | **Escalation ladder** | Progressive urgency after repeated deferrals — shorter timeout, warning color, urgency text. |
@@ -95,7 +95,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Localization** | `heading_localized` / `message_localized` maps + `--locale` flag for multi-language notifications. |
 | **Dependencies** | Sequential workflows: notification B waits for notification A to complete. |
 | **Broadcast** | Run as SYSTEM/root, auto-delivers to all active user sessions. No wrapper scripts needed. |
-| **System tray icon** | Persistent notification-area icon with pending count and quick inbox access. Auto-detected on desktop sessions, skipped on headless. |
+| **System tray icon** | Persistent notification-area icon with pending count and quick history access. Auto-detected on desktop sessions, skipped on headless. |
 | **App launcher shortcut** | "Hermes Notifications" in Start Menu / Spotlight / GNOME Activities. Searchable by name and "notifications" keyword. |
 
 ## Why web-based
