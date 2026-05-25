@@ -19,7 +19,7 @@ if (Get-Command hermes.exe -ErrorAction SilentlyContinue) {
     exit 1
 }
 
-$TESTDATA = $PSScriptRoot
+$TESTDATA = Join-Path $PSScriptRoot 'examples'
 
 # Configs in presentation order: simple first, then features, then advanced.
 $CONFIGS = @(

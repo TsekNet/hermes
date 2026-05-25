@@ -75,7 +75,7 @@ The fastest way to iterate is `--local` mode — no service required, just rende
 hermes --local '{"heading":"Test","message":"Quick test."}'
 
 # From a file (edit, save, re-run)
-hermes --local testdata/restart-notification.json
+hermes --local testdata/examples/restart-notification.json
 
 # Pipe from stdin
 echo '{"heading":"Test","message":"Piped."}' | hermes --local
@@ -90,7 +90,7 @@ Start the service in one terminal, send notifications from another:
 hermes serve
 
 # Terminal 2: send notifications
-hermes notify testdata/restart-notification.json
+hermes notify testdata/examples/restart-notification.json
 hermes list
 hermes cancel <id>
 ```
@@ -106,7 +106,7 @@ Build and copy the binary to a Windows machine (or use cross-compile):
 & .\hermes.exe --local '{"heading":"Test","message":"Windows test."}'
 
 # From file
-& .\hermes.exe --local .\testdata\restart-notification.json
+& .\hermes.exe --local .\testdata\examples\restart-notification.json
 
 # Pipe via stdin (recommended for complex JSON)
 $config = @'
@@ -149,11 +149,11 @@ Write-Host "Exit: $LASTEXITCODE"
 wails build
 
 # Test
-./build/bin/hermes --local testdata/restart-notification.json
+./build/bin/hermes --local testdata/examples/restart-notification.json
 
 # Test with service
 ./build/bin/hermes serve &
-./build/bin/hermes notify testdata/restart-notification.json
+./build/bin/hermes notify testdata/examples/restart-notification.json
 ```
 
 Notifications appear in the top-right corner (matching macOS notification behavior).
@@ -167,7 +167,7 @@ Requires a display server (X11 or Wayland with XWayland):
 wails build
 
 # Test (needs DISPLAY set)
-./build/bin/hermes --local testdata/restart-notification.json
+./build/bin/hermes --local testdata/examples/restart-notification.json
 
 # On Wayland, hermes auto-sets GDK_BACKEND=x11 for window positioning
 ```
@@ -193,7 +193,7 @@ hermes cancel <id>
 
 ## Testing the JSON config
 
-Use the bundled templates in `testdata/` as starting points:
+Use the bundled templates in `testdata/examples/` as starting points:
 
 | File | Scenario |
 |------|----------|
@@ -217,13 +217,13 @@ Edit a template, run it, tweak, repeat:
 
 ```bash
 # Edit
-vim testdata/restart-notification.json
+vim testdata/examples/restart-notification.json
 
 # Test
-hermes --local testdata/restart-notification.json
+hermes --local testdata/examples/restart-notification.json
 
 # Check what the user chose
-echo "User chose: $(hermes --local testdata/restart-notification.json)"
+echo "User chose: $(hermes --local testdata/examples/restart-notification.json)"
 echo "Exit code: $?"
 ```
 
@@ -296,6 +296,23 @@ go vet -tags webkit2_41 ./...
 ```
 
 > **Note:** The `-tags webkit2_41` flag is only required on Linux (Ubuntu 24.04+) where `libwebkit2gtk-4.1-dev` replaces the older `4.0` package. On macOS and Windows, the flag is harmless but unnecessary.
+
+### E2E tests (frontend rendering + interaction)
+
+The `e2e/` package uses Playwright to drive a headless Chromium browser against the real frontend HTML/CSS/JS. Tests verify that notification configs render correctly, buttons fire the right values, countdown timers work, and encoding edge cases (HTML entities, unicode, XSS) are handled.
+
+```bash
+# One-time setup: install Playwright browsers
+go run github.com/playwright-community/playwright-go/cmd/playwright install --with-deps chromium
+
+# Run e2e tests
+go test -v -count=1 -timeout=180s -tags "e2e,webkit2_41" ./e2e/
+
+# Update visual regression baselines (after intentional UI changes)
+UPDATE_GOLDEN=1 go test -v -count=1 -tags "e2e,webkit2_41" -run=Visual ./e2e/
+```
+
+The `e2e` build tag keeps these tests out of the standard `go test` run. Visual regression baselines live in `testdata/examples/` alongside the existing example screenshots. They are compared pixel-by-pixel with a 0.5% threshold. When a test fails, the actual screenshot is saved alongside the golden for diffing.
 
 ---
 

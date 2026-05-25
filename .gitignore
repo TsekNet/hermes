@@ -21,9 +21,16 @@ cover.out
 coverage.out
 coverage.txt
 
+# Claude Code worktrees
+.claude/worktrees/
+
 # Wails
 frontend/wailsjs/
 build/windows/icon.ico
+
+# E2E visual test diffs
+*-actual.png
+*.ci.png
 
 # Node
 node_modules/

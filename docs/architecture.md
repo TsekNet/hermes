@@ -74,7 +74,7 @@ The `escalation` array defines progressive urgency steps that mutate the notific
 | `accent_color` | Override accent color (e.g. orange then red) |
 | `message_suffix` | Appended to the message body (urgency warning text) |
 
-Escalation is applied in the manager before each re-show, so the user sees progressively more urgent versions of the same notification. See `testdata/escalation-restart.json` for a working example.
+Escalation is applied in the manager before each re-show, so the user sees progressively more urgent versions of the same notification. See `testdata/examples/escalation-restart.json` for a working example.
 
 ---
 

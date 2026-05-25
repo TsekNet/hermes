@@ -52,7 +52,7 @@ i=0
 
 for config in "${CONFIGS[@]}"; do
     i=$((i + 1))
-    path="$SCRIPT_DIR/$config"
+    path="$SCRIPT_DIR/examples/$config"
     if [[ ! -f "$path" ]]; then
         echo "[$i/$total] SKIP: $config (file not found)"
         continue
