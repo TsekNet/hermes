@@ -321,7 +321,7 @@ The `e2e` build tag keeps these tests out of the standard `go test` run. Visual 
 Only needed if you edit `proto/hermes.proto`:
 
 ```bash
-protoc --go_out=. --go-grpc_out=. proto/hermes.proto
+protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative proto/hermes.proto
 ```
 
 Requires `protoc-gen-go` and `protoc-gen-go-grpc`:
