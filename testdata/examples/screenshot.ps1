@@ -226,7 +226,7 @@ $hero_json = $hero_config | ConvertTo-Json -Depth 5
 Write-Host -NoNewline '  [hero] '
 $p = Start-Process -FilePath $HermesExe -ArgumentList '--local', "`"$hero_tmp`"" -PassThru
 
-$hero_out = Join-Path $OutDir '..\hero.png'
+$hero_out = Join-Path $OutDir '..\..\assets\hero.png'
 if (Invoke-Capture $p $hero_out) {
     Write-Host 'OK'
 } else {
