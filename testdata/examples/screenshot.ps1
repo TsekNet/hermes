@@ -47,6 +47,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 using System.Text;
 
 public class HermesCapture {
@@ -114,9 +115,29 @@ public class HermesCapture {
                 PrintWindow(hwnd, hdc, PW_RENDERFULLCONTENT);
                 g.ReleaseHdc(hdc);
             }
+            RoundCorners(bmp, 8);
             bmp.Save(path, ImageFormat.Png);
         }
         return true;
+    }
+
+    private static void RoundCorners(Bitmap bmp, int radius) {
+        using (var g = Graphics.FromImage(bmp)) {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var path = new GraphicsPath()) {
+                int w = bmp.Width, h = bmp.Height, d = radius * 2;
+                path.AddArc(0, 0, d, d, 180, 90);
+                path.AddArc(w - d, 0, d, d, 270, 90);
+                path.AddArc(w - d, h - d, d, d, 0, 90);
+                path.AddArc(0, h - d, d, d, 90, 90);
+                path.CloseFigure();
+                using (var region = new Region(new Rectangle(0, 0, w, h))) {
+                    region.Exclude(path);
+                    g.SetClip(region, CombineMode.Replace);
+                    g.Clear(Color.Transparent);
+                }
+            }
+        }
     }
 }
 "@ -ReferencedAssemblies System.Drawing
