@@ -297,6 +297,23 @@ go vet -tags webkit2_41 ./...
 
 > **Note:** The `-tags webkit2_41` flag is only required on Linux (Ubuntu 24.04+) where `libwebkit2gtk-4.1-dev` replaces the older `4.0` package. On macOS and Windows, the flag is harmless but unnecessary.
 
+### E2E tests (frontend rendering + interaction)
+
+The `e2e/` package uses Playwright to drive a headless Chromium browser against the real frontend HTML/CSS/JS. Tests verify that notification configs render correctly, buttons fire the right values, countdown timers work, and encoding edge cases (HTML entities, unicode, XSS) are handled.
+
+```bash
+# One-time setup: install Playwright browsers
+go run github.com/playwright-community/playwright-go/cmd/playwright install --with-deps chromium
+
+# Run e2e tests
+go test -v -count=1 -timeout=180s -tags "e2e,webkit2_41" ./e2e/
+
+# Update visual regression baselines (after intentional UI changes)
+UPDATE_GOLDEN=1 go test -v -count=1 -tags "e2e,webkit2_41" -run=Visual ./e2e/
+```
+
+The `e2e` build tag keeps these tests out of the standard `go test` run. Visual regression baselines live in `testdata/examples/` alongside the existing example screenshots. They are compared pixel-by-pixel with a 0.5% threshold. When a test fails, the actual screenshot is saved alongside the golden for diffing.
+
 ---
 
 ## Regenerating protobuf code
