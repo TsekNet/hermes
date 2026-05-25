@@ -30,6 +30,7 @@ build/windows/icon.ico
 
 # E2E visual test diffs
 *-actual.png
+*.ci.png
 
 # Node
 node_modules/
