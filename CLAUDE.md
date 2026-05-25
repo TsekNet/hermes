@@ -19,6 +19,12 @@ go vet -tags webkit2_41 ./...
 # Test
 go test -v -race -count=1 -tags webkit2_41 ./internal/... ./cmd/...
 
+# E2E tests (requires Playwright: go run github.com/playwright-community/playwright-go/cmd/playwright install --with-deps chromium)
+go test -v -count=1 -timeout=180s -tags "e2e,webkit2_41" ./e2e/
+
+# Update visual regression baselines
+UPDATE_GOLDEN=1 go test -v -count=1 -tags "e2e,webkit2_41" -run=Visual ./e2e/
+
 # Build (requires wails CLI: go install github.com/wailsapp/wails/v2/cmd/wails@latest)
 wails build -skipbindings -platform linux/amd64 -tags webkit2_41 \
   -ldflags "-s -w -X github.com/TsekNet/hermes/cmd.Version=dev"
