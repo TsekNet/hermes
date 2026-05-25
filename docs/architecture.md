@@ -35,8 +35,8 @@ sequenceDiagram
     UI->>Service: gRPC ReportChoice
     Service->>Script: Notify RPC returns result
     Note over Service: Deferral? Internal timer, re-launch UI later
-    Tray->>Service: User clicks "Open Inbox"
-    Service->>UI: Launch inbox webview
+    Tray->>Service: User clicks "Open History"
+    Service->>UI: Launch history webview
 ```
 
 ---
@@ -185,9 +185,9 @@ Override with `hermes serve --db /path/to/hermes.db`.
 
 ### History
 
-When a notification completes (user action, timeout, or cancellation), the manager saves a `HistoryRecord` to a separate `history` bbolt bucket. This powers the inbox feature (`hermes inbox`).
+When a notification completes (user action, timeout, or cancellation), the manager saves a `HistoryRecord` to a separate `history` bbolt bucket. This powers the history feature (`hermes history`).
 
-The `ListHistory` RPC returns both active and completed notifications. Active notifications are prepended with `config_json` set (same serialization as `GetUIConfig`) and sentinel values (empty `response_value`, zero `completed_unix`). The inbox frontend uses these sentinels to distinguish active items (shown with inline action buttons and full color) from completed items (grayed out). The inbox polls every 3 seconds to detect state changes from popup interactions.
+The `ListHistory` RPC returns both active and completed notifications. Active notifications are prepended with `config_json` set (same serialization as `GetUIConfig`) and sentinel values (empty `response_value`, zero `completed_unix`). The history frontend uses these sentinels to distinguish active items (shown with inline action buttons and full color) from completed items (grayed out). The history view polls every 3 seconds to detect state changes from popup interactions.
 
 On startup, the service prunes history records older than 30 days or exceeding 50 entries. The `PruneHistory` method enforces both age and count limits in a single pass.
 
@@ -222,7 +222,7 @@ hermes/
 │   ├── list.go                    List active notifications
 │   ├── cancel.go                  Cancel a notification
 │   ├── stop.go                    Graceful daemon shutdown
-│   ├── inbox.go                   View notification history (UI or JSON)
+│   ├── history.go                  View notification history (UI or JSON)
 │   ├── install.go                 MOTD hook setup (called by package installers)
 │   ├── uninstall.go               MOTD hook cleanup
 │   ├── sessionlaunch_windows.go   Win32 CreateProcessAsUser for per-user daemon launch
@@ -397,7 +397,7 @@ The algorithm uses `WindowCenter()` as a reference point, then derives the notif
 
 The frontend is vanilla HTML/CSS/JS — no framework, no bundler, no node_modules. CSS uses custom properties (`--accent`) set at runtime from `accent_color` in the config.
 
-The accent bar at the top of each notification doubles as a countdown progress indicator: it shrinks left-to-right via `transform: scaleX()` (GPU composited, zero layout recalc over the timeout period). When `watch_paths` is configured, a shimmer animation sweeps across the bar to indicate active filesystem monitoring. The shimmer stops permanently on the first `fs:event`, while the bar continues shrinking. The countdown element carries ARIA `progressbar` attributes for screen reader accessibility. The inbox view uses the same `.accent` element without `.bar-track`, so it renders as a static solid accent line.
+The accent bar at the top of each notification doubles as a countdown progress indicator: it shrinks left-to-right via `transform: scaleX()` (GPU composited, zero layout recalc over the timeout period). When `watch_paths` is configured, a shimmer animation sweeps across the bar to indicate active filesystem monitoring. The shimmer stops permanently on the first `fs:event`, while the bar continues shrinking. The countdown element carries ARIA `progressbar` attributes for screen reader accessibility. The history view uses the same `.accent` element without `.bar-track`, so it renders as a static solid accent line.
 
 JS communicates with Go through Wails runtime bindings:
 
@@ -408,11 +408,11 @@ JS communicates with Go through Wails runtime bindings:
 - `Respond(value)` — send the response (button click or timeout)
 - `OpenHelp()` — open help URL in system browser
 
-**Inbox view (`InboxApp`):**
+**History view (`HistoryApp`):**
 - `GetHistory()` — return notification entries (active items first with inline buttons, then completed)
-- `RespondToNotification(id, value)` — send a user choice for an active notification from the inbox
+- `RespondToNotification(id, value)` — send a user choice for an active notification from the history view
 - `RunAction(id, value)` — re-execute a `uri:` or `action:` button from history
-- `Ready()` — center and show the inbox window
+- `Ready()` — center and show the history window
 
 Wails event channels:
 - `fs:event` — filesystem change events from the watch package (fields: `path`, `op`). First event stops the accent bar shimmer animation permanently.

@@ -12,7 +12,7 @@ import (
 	"github.com/TsekNet/hermes/internal/store"
 )
 
-func TestInboxEntryFromRecord(t *testing.T) {
+func TestHistoryEntryFromRecord(t *testing.T) {
 	t.Parallel()
 
 	created := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
@@ -30,7 +30,7 @@ func TestInboxEntryFromRecord(t *testing.T) {
 		CompletedAt:   completed,
 	}
 
-	got := InboxEntryFromRecord(r)
+	got := HistoryEntryFromRecord(r)
 
 	tests := []struct {
 		name string
@@ -55,7 +55,7 @@ func TestInboxEntryFromRecord(t *testing.T) {
 	}
 }
 
-func TestInboxEntryFromClientEntry_Completed(t *testing.T) {
+func TestHistoryEntryFromClientEntry_Completed(t *testing.T) {
 	t.Parallel()
 
 	created := time.Date(2025, 7, 1, 12, 0, 0, 0, time.UTC)
@@ -72,7 +72,7 @@ func TestInboxEntryFromClientEntry_Completed(t *testing.T) {
 		ActionRequired: false,
 	}
 
-	got := InboxEntryFromClientEntry(e)
+	got := HistoryEntryFromClientEntry(e)
 
 	if got.ActionRequired {
 		t.Error("ActionRequired should be false for completed entry")
@@ -85,7 +85,7 @@ func TestInboxEntryFromClientEntry_Completed(t *testing.T) {
 	}
 }
 
-func TestInboxEntryFromClientEntry_ActiveWithButtons(t *testing.T) {
+func TestHistoryEntryFromClientEntry_ActiveWithButtons(t *testing.T) {
 	t.Parallel()
 
 	cfg := config.NotificationConfig{
@@ -107,7 +107,7 @@ func TestInboxEntryFromClientEntry_ActiveWithButtons(t *testing.T) {
 		CreatedAt:      time.Now(),
 	}
 
-	got := InboxEntryFromClientEntry(e)
+	got := HistoryEntryFromClientEntry(e)
 
 	if !got.ActionRequired {
 		t.Error("ActionRequired should be true")
@@ -126,7 +126,7 @@ func TestInboxEntryFromClientEntry_ActiveWithButtons(t *testing.T) {
 	}
 }
 
-func TestInboxEntryFromClientEntry_ActiveEmptyConfigJSON(t *testing.T) {
+func TestHistoryEntryFromClientEntry_ActiveEmptyConfigJSON(t *testing.T) {
 	t.Parallel()
 
 	e := client.HistoryEntry{
@@ -136,14 +136,14 @@ func TestInboxEntryFromClientEntry_ActiveEmptyConfigJSON(t *testing.T) {
 		CreatedAt:      time.Now(),
 	}
 
-	got := InboxEntryFromClientEntry(e)
+	got := HistoryEntryFromClientEntry(e)
 
 	if len(got.Buttons) != 0 {
 		t.Errorf("Buttons = %d, want 0 when ConfigJSON is nil", len(got.Buttons))
 	}
 }
 
-func TestInboxEntryFromClientEntry_ActiveInvalidConfigJSON(t *testing.T) {
+func TestHistoryEntryFromClientEntry_ActiveInvalidConfigJSON(t *testing.T) {
 	t.Parallel()
 
 	e := client.HistoryEntry{
@@ -153,24 +153,24 @@ func TestInboxEntryFromClientEntry_ActiveInvalidConfigJSON(t *testing.T) {
 		CreatedAt:      time.Now(),
 	}
 
-	got := InboxEntryFromClientEntry(e)
+	got := HistoryEntryFromClientEntry(e)
 
 	if len(got.Buttons) != 0 {
 		t.Errorf("Buttons = %d, want 0 when ConfigJSON is invalid", len(got.Buttons))
 	}
 }
 
-func TestNewInbox(t *testing.T) {
+func TestNewHistory(t *testing.T) {
 	t.Parallel()
-	app := NewInbox(nil)
+	app := NewHistory(nil)
 	if app.grpcClient != nil {
 		t.Error("grpcClient should be nil when passed nil")
 	}
 }
 
-func TestNewInboxLocal(t *testing.T) {
+func TestNewHistoryLocal(t *testing.T) {
 	t.Parallel()
-	app := NewInboxLocal(nil)
+	app := NewHistoryLocal(nil)
 	if app.localStore != nil {
 		t.Error("localStore should be nil when passed nil")
 	}
@@ -178,7 +178,7 @@ func TestNewInboxLocal(t *testing.T) {
 
 func TestGetHistory_NilStore(t *testing.T) {
 	t.Parallel()
-	app := &InboxApp{}
+	app := &HistoryApp{}
 	got := app.GetHistory()
 	if got != nil {
 		t.Errorf("GetHistory = %v, want nil with no client or store", got)
@@ -187,7 +187,7 @@ func TestGetHistory_NilStore(t *testing.T) {
 
 func TestRespondToNotification_NoClient(t *testing.T) {
 	t.Parallel()
-	app := &InboxApp{}
+	app := &HistoryApp{}
 	got := app.RespondToNotification("id", "ok")
 	if got != "error: no service connection" {
 		t.Errorf("got %q, want 'error: no service connection'", got)
@@ -197,7 +197,7 @@ func TestRespondToNotification_NoClient(t *testing.T) {
 func TestHistoryFromStore(t *testing.T) {
 	t.Parallel()
 
-	dbPath := filepath.Join(t.TempDir(), "inbox-store.db")
+	dbPath := filepath.Join(t.TempDir(), "history-store.db")
 	s, err := store.Open(dbPath)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
@@ -218,7 +218,7 @@ func TestHistoryFromStore(t *testing.T) {
 		CompletedAt: now.Add(-time.Hour),
 	})
 
-	app := NewInboxLocal(s)
+	app := NewHistoryLocal(s)
 	entries := app.GetHistory()
 
 	if len(entries) != 1 {
@@ -231,7 +231,7 @@ func TestHistoryFromStore(t *testing.T) {
 
 func TestHistoryFromStore_NilStore(t *testing.T) {
 	t.Parallel()
-	app := &InboxApp{}
+	app := &HistoryApp{}
 	entries := app.historyFromStore()
 	if entries != nil {
 		t.Errorf("expected nil with no store, got %d entries", len(entries))
@@ -240,7 +240,7 @@ func TestHistoryFromStore_NilStore(t *testing.T) {
 
 func TestRunAction_URIPrefix(t *testing.T) {
 	t.Parallel()
-	app := &InboxApp{}
+	app := &HistoryApp{}
 
 	got := app.RunAction("id", "some-non-uri-value")
 	if got != "some-non-uri-value" {
@@ -248,9 +248,9 @@ func TestRunAction_URIPrefix(t *testing.T) {
 	}
 }
 
-func TestInboxApp_Startup(t *testing.T) {
+func TestHistoryApp_Startup(t *testing.T) {
 	t.Parallel()
-	app := &InboxApp{}
+	app := &HistoryApp{}
 	ctx := context.Background()
 	app.Startup(ctx)
 	if app.ctx != ctx {
@@ -258,8 +258,8 @@ func TestInboxApp_Startup(t *testing.T) {
 	}
 }
 
-func TestInboxApp_Shutdown_NilFields(t *testing.T) {
+func TestHistoryApp_Shutdown_NilFields(t *testing.T) {
 	t.Parallel()
-	app := &InboxApp{}
+	app := &HistoryApp{}
 	app.Shutdown(context.Background())
 }

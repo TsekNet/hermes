@@ -109,7 +109,7 @@ func (s *Server) ListHistory(_ context.Context, _ *pb.ListHistoryRequest) (*pb.L
 	var out []*pb.HistoryEntry
 
 	// Active notifications first (need user action).
-	for _, r := range s.mgr.ListForInbox() {
+	for _, r := range s.mgr.ListForHistory() {
 		if r.Config == nil {
 			continue
 		}

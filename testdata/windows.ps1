@@ -68,7 +68,7 @@ Write-Host ''
 Write-Host '[tray 1/4] hermes serve (tray auto-detect)' -ForegroundColor Cyan
 Write-Host '  Starting service with tray icon...'
 Write-Host '  Expected: hermes icon appears in Windows notification area (system tray).'
-Write-Host '  Verify: right-click icon shows menu with Open Inbox, Pending: 0, Quit Hermes.'
+Write-Host '  Verify: right-click icon shows menu with Open History, Pending: 0, Quit Hermes.'
 Write-Host '  Press Ctrl+C to stop, then press Enter to continue.'
 $job = Start-Job { & $using:HERMES serve 2>&1 }
 $null = Read-Host
@@ -95,10 +95,10 @@ Write-Host '  Dismiss the notification, tooltip should return to "no pending".'
 Write-Host '  Press Enter when done.'
 $null = Read-Host
 
-Write-Host '[tray 4/4] Tray "Open Inbox" menu item' -ForegroundColor Cyan
+Write-Host '[tray 4/4] Tray "Open History" menu item' -ForegroundColor Cyan
 Write-Host '  With "hermes serve" running, right-click the tray icon.'
-Write-Host '  Click "Open Inbox".'
-Write-Host '  Expected: inbox window opens showing notification history.'
+Write-Host '  Click "Open History".'
+Write-Host '  Expected: history window opens showing notification history.'
 Write-Host '  Press Enter when done.'
 $null = Read-Host
 

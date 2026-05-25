@@ -50,7 +50,7 @@ func runMotd(dbPath string) error {
 	if len(entries) > 5 {
 		fmt.Printf("  ... and %d more\n", len(entries)-5)
 	}
-	fmt.Println("Run 'hermes inbox' for details.")
+	fmt.Println("Run 'hermes history' for details.")
 	fmt.Println("----------------------------------------")
 	fmt.Println()
 	return nil

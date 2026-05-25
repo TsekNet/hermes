@@ -100,10 +100,10 @@ echo "  Dismiss the notification, tooltip should return to 'no pending'."
 echo "  Press Enter when done."
 read -r
 
-echo -e "\033[36m[tray 4/4] Tray 'Open Inbox' menu item\033[0m"
+echo -e "\033[36m[tray 4/4] Tray 'Open History' menu item\033[0m"
 echo "  With 'hermes serve' running, right-click the tray icon."
-echo "  Click 'Open Inbox'."
-echo "  Expected: inbox window opens showing notification history."
+echo "  Click 'Open History'."
+echo "  Expected: history window opens showing notification history."
 echo "  Press Enter when done."
 read -r
 

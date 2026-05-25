@@ -53,7 +53,7 @@ type HermesServiceClient interface {
 	// Called by: hermes list
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 	// ListHistory returns completed notification history.
-	// Called by: hermes inbox
+	// Called by: hermes history
 	ListHistory(ctx context.Context, in *ListHistoryRequest, opts ...grpc.CallOption) (*ListHistoryResponse, error)
 	// Shutdown requests a graceful daemon shutdown.
 	// Called by: hermes stop
@@ -163,7 +163,7 @@ type HermesServiceServer interface {
 	// Called by: hermes list
 	List(context.Context, *ListRequest) (*ListResponse, error)
 	// ListHistory returns completed notification history.
-	// Called by: hermes inbox
+	// Called by: hermes history
 	ListHistory(context.Context, *ListHistoryRequest) (*ListHistoryResponse, error)
 	// Shutdown requests a graceful daemon shutdown.
 	// Called by: hermes stop

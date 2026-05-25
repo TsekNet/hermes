@@ -579,7 +579,7 @@ func TestActiveCount(t *testing.T) {
 	}
 }
 
-func TestListForInbox(t *testing.T) {
+func TestListForHistory(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -600,14 +600,14 @@ func TestListForInbox(t *testing.T) {
 
 			var ids []string
 			for i := 0; i < tt.submit; i++ {
-				id, _ := mgr.Submit(testConfig("Inbox"))
+				id, _ := mgr.Submit(testConfig("History"))
 				ids = append(ids, id)
 			}
 			for i := 0; i < tt.complete && i < len(ids); i++ {
 				mgr.ReportChoice(ids[i], "ok")
 			}
 
-			records := mgr.ListForInbox()
+			records := mgr.ListForHistory()
 			activeCount := 0
 			for _, r := range records {
 				if r.ResponseValue == "" && r.CompletedAt.IsZero() {

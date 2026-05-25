@@ -100,8 +100,8 @@ Pending notification summary shown on SSH login for headless sessions. Installed
 
 ![ssh-motd](ssh-motd.png)
 
-### Notification history (inbox)
+### Notification history
 
 Scrollable history of past notifications with outcome badges.
 
-![inbox](inbox.png)
+![history](history.png)
