@@ -334,7 +334,7 @@ Provide translated heading and message text. The resolved locale selects the bes
 
 Locale resolution order: `--locale` flag > `HERMES_LOCALE` env > `LANG` env > `"en"` fallback.
 
-Demo: `hermes --locale ja --local --config testdata/localized-restart.json`
+Demo: `hermes --locale ja --local --config testdata/examples/localized-restart.json`
 
 ### Priority
 
@@ -464,7 +464,7 @@ $config | & hermes.exe notify
 
 ## Example templates
 
-See `testdata/` for ready-to-use configs (JSON and YAML):
+See `testdata/examples/` for ready-to-use configs (JSON and YAML):
 
 - `restart-notification.json` — Restart with defer dropdown
 - `update-notification.json` — Software update with defer

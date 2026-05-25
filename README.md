@@ -9,7 +9,7 @@
 
 <br>
 
-<img src="assets/hero.png" alt="hermes notification" width="500"/>
+<img src="testdata/examples/hero.png" alt="hermes notification" width="500"/>
 
 </div>
 
@@ -57,14 +57,14 @@ hermes demo
 ### Localization
 
 ```bash
-hermes --locale ja --local testdata/localized-restart.json
+hermes --locale ja --local testdata/examples/localized-restart.json
 ```
 
 ### Local mode (no service)
 
 ```bash
 hermes --local '{"heading":"Test","message":"Quick local test."}'
-hermes --local testdata/restart-notification.json
+hermes --local testdata/examples/restart-notification.json
 ```
 
 ### Deferrals

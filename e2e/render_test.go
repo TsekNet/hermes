@@ -201,13 +201,14 @@ func TestRender_InstallWithWatch(t *testing.T) {
 
 func TestRender_LocalizedRestart(t *testing.T) {
 	cfg := LoadConfig(t, "localized-restart.json")
+	cfg.ApplyLocale("ja")
 	h := Start(t, cfg)
 
-	// Frontend receives heading/message from Go backend which resolves locale.
-	// The JSON config has heading_localized but the frontend only reads cfg.heading.
-	// This test verifies the base (English) text renders correctly.
-	if got := h.TextContent("#heading"); got != "Restart Required" {
-		t.Errorf("heading = %q, want base English heading", got)
+	if got := h.TextContent("#heading"); got != "再起動が必要です" {
+		t.Errorf("heading = %q, want Japanese heading", got)
+	}
+	if got := h.TextContent("#message"); got != "セキュリティアップデートを適用するため、コンピューターを再起動してください。" {
+		t.Errorf("message = %q, want Japanese message", got)
 	}
 }
 

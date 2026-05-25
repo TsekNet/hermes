@@ -1,6 +1,6 @@
 # Test Data
 
-JSON configs for every notification type. Used by unit tests and the manual validation scripts below.
+Notification configs and screenshots live in [`examples/`](examples/). Platform validation scripts are at this level.
 
 ## Manual validation scripts
 
@@ -53,7 +53,3 @@ Each platform script includes interactive tray icon tests after the notification
 | Open Inbox | Click menu item, inbox window opens |
 
 **Linux note:** GNOME requires the `gnome-shell-extension-appindicator` extension for tray icons. Ubuntu installs it by default; Fedora/RHEL do not. KDE, XFCE, MATE, Cinnamon work without extra setup. On unsupported DEs, the tray auto-disables gracefully.
-
-## Screenshots
-
-See [examples/](examples/) for captured screenshots of every notification type.

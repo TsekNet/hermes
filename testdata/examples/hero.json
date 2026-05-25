@@ -1,0 +1,23 @@
+{
+  "heading": "Hermes",
+  "message": "A cross-platform notification framework for IT teams.\n\nPowered by Go and Wails v2, Hermes displays rich notifications in a native webview with support for buttons, deferrals, image carousels, and more.",
+  "title": "IT Department",
+  "accent_color": "#D4A843",
+  "dnd": "ignore",
+  "timeout": 300,
+  "timeout_value": "defer_1h",
+  "esc_value": "defer_1h",
+  "help_url": "https://github.com/TsekNet/hermes",
+  "buttons": [
+    {
+      "label": "Defer",
+      "style": "secondary",
+      "dropdown": [
+        {"label": "1 Hour", "value": "defer_1h"},
+        {"label": "4 Hours", "value": "defer_4h"},
+        {"label": "1 Day", "value": "defer_1d"}
+      ]
+    },
+    {"label": "Get Started", "value": "start", "style": "primary"}
+  ]
+}

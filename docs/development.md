@@ -75,7 +75,7 @@ The fastest way to iterate is `--local` mode — no service required, just rende
 hermes --local '{"heading":"Test","message":"Quick test."}'
 
 # From a file (edit, save, re-run)
-hermes --local testdata/restart-notification.json
+hermes --local testdata/examples/restart-notification.json
 
 # Pipe from stdin
 echo '{"heading":"Test","message":"Piped."}' | hermes --local
@@ -90,7 +90,7 @@ Start the service in one terminal, send notifications from another:
 hermes serve
 
 # Terminal 2: send notifications
-hermes notify testdata/restart-notification.json
+hermes notify testdata/examples/restart-notification.json
 hermes list
 hermes cancel <id>
 ```
@@ -106,7 +106,7 @@ Build and copy the binary to a Windows machine (or use cross-compile):
 & .\hermes.exe --local '{"heading":"Test","message":"Windows test."}'
 
 # From file
-& .\hermes.exe --local .\testdata\restart-notification.json
+& .\hermes.exe --local .\testdata\examples\restart-notification.json
 
 # Pipe via stdin (recommended for complex JSON)
 $config = @'
@@ -149,11 +149,11 @@ Write-Host "Exit: $LASTEXITCODE"
 wails build
 
 # Test
-./build/bin/hermes --local testdata/restart-notification.json
+./build/bin/hermes --local testdata/examples/restart-notification.json
 
 # Test with service
 ./build/bin/hermes serve &
-./build/bin/hermes notify testdata/restart-notification.json
+./build/bin/hermes notify testdata/examples/restart-notification.json
 ```
 
 Notifications appear in the top-right corner (matching macOS notification behavior).
@@ -167,7 +167,7 @@ Requires a display server (X11 or Wayland with XWayland):
 wails build
 
 # Test (needs DISPLAY set)
-./build/bin/hermes --local testdata/restart-notification.json
+./build/bin/hermes --local testdata/examples/restart-notification.json
 
 # On Wayland, hermes auto-sets GDK_BACKEND=x11 for window positioning
 ```
@@ -193,7 +193,7 @@ hermes cancel <id>
 
 ## Testing the JSON config
 
-Use the bundled templates in `testdata/` as starting points:
+Use the bundled templates in `testdata/examples/` as starting points:
 
 | File | Scenario |
 |------|----------|
@@ -217,13 +217,13 @@ Edit a template, run it, tweak, repeat:
 
 ```bash
 # Edit
-vim testdata/restart-notification.json
+vim testdata/examples/restart-notification.json
 
 # Test
-hermes --local testdata/restart-notification.json
+hermes --local testdata/examples/restart-notification.json
 
 # Check what the user chose
-echo "User chose: $(hermes --local testdata/restart-notification.json)"
+echo "User chose: $(hermes --local testdata/examples/restart-notification.json)"
 echo "Exit code: $?"
 ```
 

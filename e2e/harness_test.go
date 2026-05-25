@@ -77,12 +77,12 @@ func frontendDir(t *testing.T) string {
 
 func testdataDir(t *testing.T) string {
 	t.Helper()
-	return filepath.Join(repoRoot(t), "testdata")
+	return filepath.Join(repoRoot(t), "testdata", "examples")
 }
 
 func goldenDir(t *testing.T) string {
 	t.Helper()
-	return filepath.Join(repoRoot(t), "testdata", "examples")
+	return testdataDir(t)
 }
 
 // NewHarness creates a Harness with the given viewport dimensions.
