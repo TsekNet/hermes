@@ -407,3 +407,132 @@ func TestReopenPersists(t *testing.T) {
 		t.Fatalf("expected 1 record 'survive' after reopen, got %v", records)
 	}
 }
+
+func TestOpenReadOnly(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "readonly.db")
+
+	s, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	s.SaveHistory(&HistoryRecord{
+		ID:     "h-ro",
+		Config: &config.NotificationConfig{Heading: "ReadOnly"},
+	})
+	s.Close()
+
+	ro, err := OpenReadOnly(path)
+	if err != nil {
+		t.Fatalf("OpenReadOnly: %v", err)
+	}
+	defer ro.Close()
+
+	records, err := ro.LoadHistory()
+	if err != nil {
+		t.Fatalf("LoadHistory: %v", err)
+	}
+	if len(records) != 1 || records[0].ID != "h-ro" {
+		t.Fatalf("expected 1 record 'h-ro', got %v", records)
+	}
+}
+
+func TestOpenReadOnly_MissingFile(t *testing.T) {
+	t.Parallel()
+	_, err := OpenReadOnly(filepath.Join(t.TempDir(), "missing.db"))
+	if err == nil {
+		t.Error("expected error for missing DB file")
+	}
+}
+
+func TestOpen_CreatesParentDir(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "nested", "deep", "test.db")
+	s, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	s.Close()
+}
+
+func TestPruneHistory_MaxCountZero(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+
+	now := time.Now()
+	for i := range 5 {
+		s.SaveHistory(&HistoryRecord{
+			ID:          fmt.Sprintf("h-%d", i),
+			Config:      &config.NotificationConfig{Heading: fmt.Sprintf("N%d", i)},
+			CompletedAt: now.Add(time.Duration(i) * time.Minute),
+		})
+	}
+
+	// maxCount=0 is clamped to 1 internally.
+	if err := s.PruneHistory(999*time.Hour, 0); err != nil {
+		t.Fatalf("PruneHistory: %v", err)
+	}
+
+	got, _ := s.LoadHistory()
+	if len(got) != 1 {
+		t.Fatalf("expected 1 record (clamped maxCount=0 to 1), got %d", len(got))
+	}
+}
+
+func TestDefaultPath_NonEmpty(t *testing.T) {
+	t.Parallel()
+	p := defaultPath()
+	if p == "" {
+		t.Error("defaultPath() returned empty string")
+	}
+	if !filepath.IsAbs(p) {
+		t.Errorf("defaultPath() = %q, want absolute path", p)
+	}
+}
+
+func TestEnqueueOffline_GeneratesID(t *testing.T) {
+	t.Parallel()
+	path := filepath.Join(t.TempDir(), "autoid.db")
+
+	cfg := &config.NotificationConfig{Heading: "AutoID", Message: "test"}
+	if err := EnqueueOffline(path, cfg, 24*time.Hour); err != nil {
+		t.Fatalf("EnqueueOffline: %v", err)
+	}
+
+	s, err := Open(path)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer s.Close()
+
+	records, _ := s.LoadQueue()
+	if len(records) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(records))
+	}
+	if records[0].ID == "" {
+		t.Error("expected auto-generated ID, got empty")
+	}
+	if records[0].ID[:2] != "q-" {
+		t.Errorf("auto-generated ID = %q, want q- prefix", records[0].ID)
+	}
+}
+
+func TestDeleteNonexistentRecord(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+	if err := s.Delete("does-not-exist"); err != nil {
+		t.Errorf("Delete non-existent should not error, got: %v", err)
+	}
+}
+
+func TestLoadAll_EmptyStore(t *testing.T) {
+	t.Parallel()
+	s := tempStore(t)
+	records, err := s.LoadAll()
+	if err != nil {
+		t.Fatalf("LoadAll: %v", err)
+	}
+	if len(records) != 0 {
+		t.Errorf("expected 0 records, got %d", len(records))
+	}
+}
