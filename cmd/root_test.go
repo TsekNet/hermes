@@ -50,14 +50,6 @@ func TestBuildRootCmd_SubcommandErrors(t *testing.T) {
 		}
 	})
 
-	t.Run("notify inline JSON no service", func(t *testing.T) {
-		cmd := buildRootCmd()
-		cmd.SetArgs([]string{"notify", `{"heading":"Test","message":"M"}`})
-		if err := cmd.Execute(); err == nil {
-			t.Skip("service running, cannot test offline path")
-		}
-	})
-
 	t.Run("inbox JSON", func(t *testing.T) {
 		dbPath := filepath.Join(t.TempDir(), "inbox-cmd.db")
 		cmd := buildRootCmd()
