@@ -100,12 +100,14 @@ Pending notification summary shown on SSH login for headless sessions. Installed
 
 ```
 user@devbox:~$
-  -- Hermes: 3 pending notification(s) --
+
+-- Hermes: 3 pending notification(s) --
   * Restart Required
   * VPN Update Available
   * Security Training Due
+Run 'hermes history' for details.
+----------------------------------------
 
-  Run 'hermes history' for details.
 user@devbox:~$
 ```
 
