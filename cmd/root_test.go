@@ -395,7 +395,7 @@ func TestFilterDeferButtons(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := filterDeferButtons(tt.buttons)
+			got := config.FilterDeferButtons(tt.buttons)
 
 			if tt.wantLabels == nil {
 				if got != nil {
@@ -430,7 +430,7 @@ func TestFilterDeferButtons_DropdownNonDeferOptionsPreserved(t *testing.T) {
 			{Label: "Shutdown", Value: "shutdown"},
 		}},
 	}
-	got := filterDeferButtons(buttons)
+	got := config.FilterDeferButtons(buttons)
 	if len(got) != 1 {
 		t.Fatalf("expected 1 button, got %d", len(got))
 	}
@@ -465,7 +465,7 @@ func TestRespond_ExitCodes(t *testing.T) {
 			t.Parallel()
 
 			if os.Getenv("TEST_RESPOND_SUBPROCESS") == "1" {
-				respond(os.Getenv("TEST_RESPOND_VALUE"))
+				respondAndExit(os.Getenv("TEST_RESPOND_VALUE"))
 				return
 			}
 

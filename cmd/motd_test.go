@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/TsekNet/hermes/internal/client"
 	"github.com/TsekNet/hermes/internal/config"
 	"github.com/TsekNet/hermes/internal/store"
 )
@@ -125,5 +128,82 @@ func TestRunMotd_SSHEmptyHistory(t *testing.T) {
 	err = runMotd(dbPath)
 	if err != nil {
 		t.Fatalf("runMotd: %v", err)
+	}
+}
+
+type mockOneliner struct {
+	entries []client.ListEntry
+	err     error
+}
+
+func (m *mockOneliner) List(_ context.Context) ([]client.ListEntry, error) {
+	return m.entries, m.err
+}
+
+func (m *mockOneliner) Close() error { return nil }
+
+func TestMotdOneline_WithPending(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	dial := func() (oneliner, error) {
+		return &mockOneliner{entries: []client.ListEntry{{ID: "a"}, {ID: "b"}, {ID: "c"}}}, nil
+	}
+	runMotdOnelineWith(&buf, dial, time.Second)
+	if got := buf.String(); got != "3 pending" {
+		t.Errorf("got %q, want %q", got, "3 pending")
+	}
+}
+
+func TestMotdOneline_NoPending(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	dial := func() (oneliner, error) {
+		return &mockOneliner{entries: nil}, nil
+	}
+	runMotdOnelineWith(&buf, dial, time.Second)
+	if got := buf.String(); got != "" {
+		t.Errorf("got %q, want empty", got)
+	}
+}
+
+func TestMotdOneline_ServiceDown(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	dial := func() (oneliner, error) {
+		return nil, fmt.Errorf("connection refused")
+	}
+	runMotdOnelineWith(&buf, dial, time.Second)
+	if got := buf.String(); got != "" {
+		t.Errorf("got %q, want empty on dial error", got)
+	}
+}
+
+func TestMotdOneline_DaemonHangs(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	slowDial := func() (oneliner, error) {
+		time.Sleep(500 * time.Millisecond)
+		return &mockOneliner{entries: []client.ListEntry{{ID: "a"}}}, nil
+	}
+	start := time.Now()
+	runMotdOnelineWith(&buf, slowDial, 50*time.Millisecond)
+	elapsed := time.Since(start)
+	if got := buf.String(); got != "" {
+		t.Errorf("got %q, want empty on timeout", got)
+	}
+	if elapsed > 200*time.Millisecond {
+		t.Errorf("took %v, should complete within ~50ms deadline", elapsed)
+	}
+}
+
+func TestMotdOneline_ListError(t *testing.T) {
+	t.Parallel()
+	var buf bytes.Buffer
+	dial := func() (oneliner, error) {
+		return &mockOneliner{err: fmt.Errorf("rpc error")}, nil
+	}
+	runMotdOnelineWith(&buf, dial, time.Second)
+	if got := buf.String(); got != "" {
+		t.Errorf("got %q, want empty on list error", got)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/TsekNet/hermes/internal/action"
 	"github.com/TsekNet/hermes/internal/client"
 	"github.com/TsekNet/hermes/internal/config"
+	"github.com/TsekNet/hermes/internal/respond"
 	"github.com/TsekNet/hermes/internal/store"
 	"github.com/google/deck"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -120,6 +121,7 @@ func HistoryEntryFromClientEntry(e client.HistoryEntry) HistoryEntry {
 }
 
 // RespondToNotification sends a user choice for an active notification.
+// Uses the shared respond.Submit path for validation and defer filtering.
 // Returns "ok" on success or an error string.
 func (a *HistoryApp) RespondToNotification(id, value string) string {
 	if a.grpcClient == nil {
@@ -127,13 +129,10 @@ func (a *HistoryApp) RespondToNotification(id, value string) string {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	accepted, err := a.grpcClient.ReportChoice(ctx, id, value)
+	_, err := respond.Submit(ctx, a.grpcClient, id, value)
 	if err != nil {
 		deck.Errorf("history: report choice %s=%s: %v", id, value, err)
 		return "error: " + err.Error()
-	}
-	if !accepted {
-		return "error: choice not accepted"
 	}
 	deck.Infof("history: responded to %s with %s", id, value)
 	return "ok"

@@ -90,6 +90,8 @@ Use '--config' or '--local' to render directly without the service.`,
 	root.AddCommand(historyCmd())
 	root.AddCommand(stopCmd())
 	root.AddCommand(motdCmd())
+	root.AddCommand(showCmd())
+	root.AddCommand(respondCmd())
 	root.AddCommand(installCmd())
 	root.AddCommand(uninstallCmd())
 
@@ -222,7 +224,7 @@ func runServiceUI(notifID string) error {
 
 	// If deferrals are exhausted or deadline passed, filter out defer buttons.
 	if !deferAllowed {
-		cfg.Buttons = filterDeferButtons(cfg.Buttons)
+		cfg.Buttons = config.FilterDeferButtons(cfg.Buttons)
 	}
 
 	deck.Infof("notification: mode=service-ui id=%s heading=%q defer_allowed=%v", notifID, cfg.Heading, deferAllowed)
@@ -248,30 +250,6 @@ func runServiceUI(notifID string) error {
 	}
 	os.Exit(int(exitcodes.OK))
 	return nil
-}
-
-// filterDeferButtons removes defer-valued buttons and dropdown options.
-func filterDeferButtons(buttons []config.Button) []config.Button {
-	var out []config.Button
-	for _, btn := range buttons {
-		if strings.HasPrefix(btn.Value, "defer") {
-			continue
-		}
-		if len(btn.Dropdown) > 0 {
-			var filtered []config.DropdownOption
-			for _, opt := range btn.Dropdown {
-				if !strings.HasPrefix(opt.Value, "defer") {
-					filtered = append(filtered, opt)
-				}
-			}
-			if len(filtered) == 0 && btn.Value == "" {
-				continue
-			}
-			btn.Dropdown = filtered
-		}
-		out = append(out, btn)
-	}
-	return out
 }
 
 // resolveConfig loads config from a flag value, positional arg, or stdin.
@@ -391,7 +369,7 @@ func runUI(cfg *config.NotificationConfig) {
 		os.Exit(int(exitcodes.Error))
 	}
 
-	respond(a.Result)
+	respondAndExit(a.Result)
 }
 
 // webview2DataPath returns a dedicated WebView2 user data directory for
@@ -428,7 +406,7 @@ func prepareConfig(cfg *config.NotificationConfig) {
 // respond prints the value to stdout and exits with the appropriate code.
 // The JS frontend prefixes timeout responses with "timeout:" so we can
 // distinguish "user clicked restart" (exit 0) from "countdown expired" (exit 202).
-func respond(value string) {
+func respondAndExit(value string) {
 	if value == "" {
 		deck.Infof("notification: result=dismissed exit=0")
 		os.Exit(0)
