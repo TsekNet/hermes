@@ -366,7 +366,7 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `hermes notify [config]` | Send notification to service (blocks for result). Broadcasts when run as SYSTEM/root ([details](broadcast.md)). |
 | `hermes list` | List active notifications with numbered positions (#, heading, state, defers, deadline) |
 | `hermes list <#>` | Show a single notification in table form |
-| `hermes list --full <#>` | Show full notification details and available actions |
+| `hermes list --details <#>` | Show full notification details and available actions |
 | `hermes list --json` | List active notifications as JSON array (for scripting) |
 | `hermes respond <#> [value]` | Submit a response for a notification. Interactive picker when no value and TTY. |
 | `hermes cancel <#>` | Cancel an active notification |
@@ -409,7 +409,7 @@ hermes list
 hermes list 1
 
 # See full details and available actions
-hermes list --full 1
+hermes list --details 1
 
 # Respond interactively (TTY only, numbered menu)
 hermes respond 1

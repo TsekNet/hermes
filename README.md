@@ -47,7 +47,7 @@ hermes --config notification.json
 hermes list
 
 # Show details and available actions by position number
-hermes list --full 1
+hermes list --details 1
 
 # Respond by position number (or interactively with no value)
 hermes respond 1

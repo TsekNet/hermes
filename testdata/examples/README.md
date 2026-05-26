@@ -113,7 +113,7 @@ user@devbox:~$
 
 ### Terminal CLI
 
-Full notification interaction without a GUI. Position numbers from `hermes list` work with `list --full`, `respond`, and `cancel`.
+Full notification interaction without a GUI. Position numbers from `hermes list` work with `list --details`, `respond`, and `cancel`.
 
 ```
 $ hermes list
@@ -121,9 +121,9 @@ $ hermes list
 1   System Restart Required        awaiting_response  0        none
 2   VPN Disconnecting              awaiting_response  0        none
 
-Details: hermes list --full <#>    Respond: hermes respond <#>
+Details: hermes list --details <#>    Respond: hermes respond <#>
 
-$ hermes list --full 1
+$ hermes list --details 1
 System Restart Required
 -----------------------
 Your computer needs to restart to apply security updates.
@@ -141,7 +141,7 @@ Restart Required: choose action
   [2] 4 Hours
   [3] Restart Now
 > 3
-Sent: restart
+Responded with: Restart Now
 ```
 
 ### Notification history

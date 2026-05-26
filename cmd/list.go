@@ -23,10 +23,10 @@ func listCmd() *cobra.Command {
 		Use:   "list [#]",
 		Short: "List active notifications",
 		Long: `List active notifications. With a position number, shows that single
-notification in the table. With --full, shows full details and actions.`,
+notification in the table. With --details, shows full details and actions.`,
 		Example: `  hermes list
   hermes list 1
-  hermes list --full 1
+  hermes list --details 1
   hermes list --json`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -68,12 +68,12 @@ notification in the table. With --full, shows full details and actions.`,
 
 			writeTable(os.Stdout, entries, 0)
 			fmt.Println()
-			fmt.Println("Details: hermes list --full <#>    Respond: hermes respond <#>")
+			fmt.Println("Details: hermes list --details <#>    Respond: hermes respond <#>")
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "output as JSON array")
-	cmd.Flags().BoolVar(&full, "full", false, "show full details and actions for a notification")
+	cmd.Flags().BoolVar(&full, "details", false, "show full details and actions for a notification")
 	return cmd
 }
 

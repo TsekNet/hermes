@@ -78,7 +78,14 @@ func submitValue(out io.Writer, c respond.Client, id, value string) (int32, erro
 	if err != nil {
 		return 1, err
 	}
-	fmt.Fprintf(out, "Sent: %s\n", result.Value)
+	label := result.Value
+	for _, a := range config.FlattenActions(result.Buttons) {
+		if a.Value == result.Value {
+			label = a.Label
+			break
+		}
+	}
+	fmt.Fprintf(out, "Responded with: %s\n", label)
 	return result.ExitCode, nil
 }
 
