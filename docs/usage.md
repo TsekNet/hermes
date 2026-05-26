@@ -364,14 +364,18 @@ The second notification is held in `waiting_on_dependency` state until the first
 |---------|-------------|
 | `hermes serve` | Start the gRPC service daemon (with system tray icon when a display server is available) |
 | `hermes notify [config]` | Send notification to service (blocks for result). Broadcasts when run as SYSTEM/root ([details](broadcast.md)). |
-| `hermes list` | List active notifications |
-| `hermes cancel <id>` | Cancel an active notification |
-| `hermes history` | View notification history (opens history UI) |
+| `hermes list` | List active notifications with numbered positions (#, ID, heading, state, defers, deadline) |
+| `hermes list --json` | List active notifications as JSON array (for scripting) |
+| `hermes show <id or #>` | Show full notification details and available actions |
+| `hermes respond <id or #> [value]` | Submit a response for a notification. Interactive picker when no value and TTY. |
+| `hermes cancel <id or #>` | Cancel an active notification |
+| `hermes history` | View notification history (opens GUI, or prints summary if headless) |
 | `hermes history --json` | Print notification history as JSON to stdout |
 | `hermes install` | Configure MOTD hook and launch daemon in active user sessions (when elevated). Called by package postinstall. |
 | `hermes uninstall` | Remove MOTD hook. Called by package removal scripts. |
 | `hermes stop` | Graceful daemon shutdown (gRPC then fallback kill) |
 | `hermes motd` | Print pending notification summary for SSH login banners (called by profile.d scripts) |
+| `hermes motd --oneline` | Print "N pending" or nothing (scriptable pending-count check, 100ms timeout) |
 | `hermes demo` | Show a demo notification |
 | `hermes version` | Print version, build date, Go, and OS info |
 
@@ -386,8 +390,60 @@ The second notification is held in `waiting_on_dependency` state until the first
 | `--locale <code>` | root | Override locale for localized notifications (e.g. `ja`, `de`) |
 | `--no-tray` | serve | Disable the system tray icon (default: auto-detect display server) |
 | `--db <path>` | serve, history, motd | Bolt database path (default: platform-specific, see [Architecture](architecture.md#persistence)) |
-| `--json` | history | Print history as JSON instead of opening the UI |
+| `--json` | list, history | Machine-readable JSON output |
+| `--oneline` | motd | Print "N pending" or nothing (scriptable pending-count check, 100ms timeout) |
 | `--help` | all | Print help |
+
+---
+
+## Terminal CLI (SSH-only users)
+
+For headless environments where no GUI is available, the terminal CLI provides full notification interaction. Commands that take an ID also accept a `#` position from `hermes list`:
+
+```bash
+# List active notifications (numbered)
+hermes list
+
+# See full details by position number
+hermes show 1
+
+# Respond by position number
+hermes respond 1 restart
+
+# Respond interactively (TTY only, numbered menu)
+hermes respond 1
+
+# Cancel by position number
+hermes cancel 1
+
+# Full IDs also work
+hermes show abc123def456
+
+# Scriptable pending-count check (100ms timeout, never blocks)
+hermes motd --oneline
+```
+
+### hermes respond exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Choice accepted (non-defer value) |
+| `1` | Error: not found, invalid value, service down, no TTY and no value |
+| `200` | Choice accepted (defer value) |
+
+### Automation example
+
+```bash
+ids=$(hermes list --json | jq -r '.[] | select(.state == "awaiting_response") | .id')
+for id in $ids; do
+  hermes respond "$id" restart
+  echo "exit: $?"
+done
+```
+
+### Discovery
+
+`hermes install` configures the MOTD hook so `hermes motd` runs on SSH login. Users see pending notifications at login and can run `hermes list` to check at any time. The `--oneline` flag provides a scriptable pending-count check with a 100ms hard deadline: on any error, timeout, or daemon down, it prints nothing and exits 0.
 
 ---
 

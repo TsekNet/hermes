@@ -231,6 +231,58 @@ func (c *NotificationConfig) HasValue(value string) bool {
 	return false
 }
 
+// FilterDeferButtons removes defer-valued buttons and dropdown options.
+func FilterDeferButtons(buttons []Button) []Button {
+	var out []Button
+	for _, btn := range buttons {
+		if strings.HasPrefix(btn.Value, "defer") {
+			continue
+		}
+		if len(btn.Dropdown) > 0 {
+			var filtered []DropdownOption
+			for _, opt := range btn.Dropdown {
+				if !strings.HasPrefix(opt.Value, "defer") {
+					filtered = append(filtered, opt)
+				}
+			}
+			if len(filtered) == 0 && btn.Value == "" {
+				continue
+			}
+			btn.Dropdown = filtered
+		}
+		out = append(out, btn)
+	}
+	return out
+}
+
+// Action is a single selectable choice flattened from buttons and dropdowns.
+type Action struct {
+	Label string
+	Value string
+}
+
+// FlattenActions expands buttons and their dropdown children into a flat
+// list of selectable actions. Parent buttons with an empty Value (pure
+// dropdown containers) are skipped; their children become top-level entries.
+func FlattenActions(buttons []Button) []Action {
+	var out []Action
+	for _, btn := range buttons {
+		if len(btn.Dropdown) > 0 {
+			for _, d := range btn.Dropdown {
+				out = append(out, Action{Label: d.Label, Value: d.Value})
+			}
+			if btn.Value != "" {
+				out = append(out, Action{Label: btn.Label, Value: btn.Value})
+			}
+			continue
+		}
+		if btn.Value != "" {
+			out = append(out, Action{Label: btn.Label, Value: btn.Value})
+		}
+	}
+	return out
+}
+
 // MaxConfigSize is the maximum allowed config payload (64 KB).
 const MaxConfigSize = 64 * 1024
 

@@ -1140,6 +1140,85 @@ quiet_hours:
 }
 
 
+func TestFlattenActions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		buttons []Button
+		want    []Action
+	}{
+		{
+			name:    "empty",
+			buttons: nil,
+			want:    nil,
+		},
+		{
+			name: "plain buttons",
+			buttons: []Button{
+				{Label: "Restart", Value: "restart"},
+				{Label: "Dismiss", Value: "dismiss"},
+			},
+			want: []Action{
+				{Label: "Restart", Value: "restart"},
+				{Label: "Dismiss", Value: "dismiss"},
+			},
+		},
+		{
+			name: "dropdown container expands children",
+			buttons: []Button{
+				{Label: "Defer", Dropdown: []DropdownOption{
+					{Label: "10 Seconds", Value: "defer_10s"},
+					{Label: "30 Seconds", Value: "defer_30s"},
+				}},
+				{Label: "Restart", Value: "restart"},
+			},
+			want: []Action{
+				{Label: "10 Seconds", Value: "defer_10s"},
+				{Label: "30 Seconds", Value: "defer_30s"},
+				{Label: "Restart", Value: "restart"},
+			},
+		},
+		{
+			name: "dropdown parent with own value",
+			buttons: []Button{
+				{Label: "Defer", Value: "defer_default", Dropdown: []DropdownOption{
+					{Label: "1 Hour", Value: "defer_1h"},
+				}},
+			},
+			want: []Action{
+				{Label: "1 Hour", Value: "defer_1h"},
+				{Label: "Defer", Value: "defer_default"},
+			},
+		},
+		{
+			name: "empty-value button with no dropdown skipped",
+			buttons: []Button{
+				{Label: "Placeholder"},
+				{Label: "OK", Value: "ok"},
+			},
+			want: []Action{
+				{Label: "OK", Value: "ok"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := FlattenActions(tt.buttons)
+			if len(got) != len(tt.want) {
+				t.Fatalf("len = %d, want %d\ngot: %+v", len(got), len(tt.want), got)
+			}
+			for i := range tt.want {
+				if got[i] != tt.want[i] {
+					t.Errorf("[%d] = %+v, want %+v", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
 func TestHasValue(t *testing.T) {
 	t.Parallel()
 

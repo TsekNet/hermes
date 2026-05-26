@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"runtime"
+	"time"
 
 	"github.com/TsekNet/hermes/internal/app"
 	"github.com/TsekNet/hermes/internal/client"
@@ -34,6 +37,9 @@ action (uri: opens the URI, action: runs the built-in verb).`,
 			if asJSON {
 				return printHistoryJSON(dbPath)
 			}
+			if !hasDisplay() {
+				return printHistorySummary(dbPath)
+			}
 			return runHistoryUI(dbPath)
 		},
 	}
@@ -42,12 +48,57 @@ action (uri: opens the URI, action: runs the built-in verb).`,
 	return cmd
 }
 
+func hasDisplay() bool {
+	switch runtime.GOOS {
+	case "windows":
+		return true
+	case "darwin":
+		return os.Getenv("DISPLAY") != "" || os.Getenv("TERM_PROGRAM") != ""
+	default:
+		return os.Getenv("DISPLAY") != "" || os.Getenv("WAYLAND_DISPLAY") != ""
+	}
+}
+
+func printHistorySummary(dbPath string) error {
+	entries, err := fetchHistory(dbPath)
+	if err != nil {
+		return err
+	}
+	return writeHistorySummary(os.Stdout, entries)
+}
+
+func writeHistorySummary(out io.Writer, entries []app.HistoryEntry) error {
+	if len(entries) == 0 {
+		fmt.Fprintln(out, "No notification history.")
+		return nil
+	}
+	fmt.Fprintf(out, "%d notification(s):\n\n", len(entries))
+	for _, e := range entries {
+		if e.ActionRequired {
+			fmt.Fprintf(out, "  %-8s * %-30s (action required)\n", e.ID, e.Heading)
+		} else {
+			created := e.CreatedAt
+			if t, err := time.Parse(time.RFC3339, e.CreatedAt); err == nil {
+				created = t.Local().Format("Jan 02 15:04")
+			}
+			fmt.Fprintf(out, "  %-8s   %-30s %-12s %s\n", e.ID, e.Heading, e.ResponseValue, created)
+		}
+	}
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "* = action required. Use 'hermes list' for details, 'hermes respond <id> <value>' to act.")
+	return nil
+}
+
 func printHistoryJSON(dbPath string) error {
 	entries, err := fetchHistory(dbPath)
 	if err != nil {
 		return err
 	}
-	enc := json.NewEncoder(os.Stdout)
+	return writeHistoryJSON(os.Stdout, entries)
+}
+
+func writeHistoryJSON(out io.Writer, entries []app.HistoryEntry) error {
+	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 	return enc.Encode(entries)
 }
