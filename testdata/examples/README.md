@@ -98,7 +98,16 @@ Blocked by `depends_on: accept-eula`. Only shown after step 1 completes.
 
 Pending notification summary shown on SSH login for headless sessions. Installed to `/etc/profile.d/` (Linux/macOS) or `$PROFILE.AllUsersAllHosts` (Windows).
 
-![ssh-motd](ssh-motd.png)
+```
+user@devbox:~$
+  -- Hermes: 3 pending notification(s) --
+  * Restart Required
+  * VPN Update Available
+  * Security Training Due
+
+  Run 'hermes history' for details.
+user@devbox:~$
+```
 
 ### Notification history
 
