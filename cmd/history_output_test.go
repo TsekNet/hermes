@@ -29,14 +29,16 @@ func TestWriteHistorySummary(t *testing.T) {
 			entries: []app.HistoryEntry{
 				{ID: "abc123", Heading: "Reboot Required", ActionRequired: true},
 			},
-			contains: []string{"*", "Reboot Required", "action required", "abc123"},
+			contains: []string{"*", "Reboot Required", "action required"},
+			absent:   []string{"abc123"},
 		},
 		{
 			name: "completed entry shows response and date",
 			entries: []app.HistoryEntry{
 				{ID: "def456", Heading: "VPN Update", ResponseValue: "ok", CreatedAt: "2025-06-15T14:30:00Z"},
 			},
-			contains: []string{"def456", "VPN Update", "ok"},
+			contains: []string{"VPN Update", "ok"},
+			absent:   []string{"def456"},
 		},
 		{
 			name: "mixed entries show footer hint",

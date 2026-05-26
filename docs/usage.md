@@ -364,11 +364,12 @@ The second notification is held in `waiting_on_dependency` state until the first
 |---------|-------------|
 | `hermes serve` | Start the gRPC service daemon (with system tray icon when a display server is available) |
 | `hermes notify [config]` | Send notification to service (blocks for result). Broadcasts when run as SYSTEM/root ([details](broadcast.md)). |
-| `hermes list` | List active notifications with numbered positions (#, ID, heading, state, defers, deadline) |
+| `hermes list` | List active notifications with numbered positions (#, heading, state, defers, deadline) |
+| `hermes list <#>` | Show a single notification in table form |
+| `hermes list --full <#>` | Show full notification details and available actions |
 | `hermes list --json` | List active notifications as JSON array (for scripting) |
-| `hermes show <id or #>` | Show full notification details and available actions |
-| `hermes respond <id or #> [value]` | Submit a response for a notification. Interactive picker when no value and TTY. |
-| `hermes cancel <id or #>` | Cancel an active notification |
+| `hermes respond <#> [value]` | Submit a response for a notification. Interactive picker when no value and TTY. |
+| `hermes cancel <#>` | Cancel an active notification |
 | `hermes history` | View notification history (opens GUI, or prints summary if headless) |
 | `hermes history --json` | Print notification history as JSON to stdout |
 | `hermes install` | Configure MOTD hook and launch daemon in active user sessions (when elevated). Called by package postinstall. |
@@ -398,26 +399,26 @@ The second notification is held in `waiting_on_dependency` state until the first
 
 ## Terminal CLI (SSH-only users)
 
-For headless environments where no GUI is available, the terminal CLI provides full notification interaction. Commands that take an ID also accept a `#` position from `hermes list`:
+For headless environments where no GUI is available, the terminal CLI provides full notification interaction. All commands use position numbers from `hermes list`:
 
 ```bash
 # List active notifications (numbered)
 hermes list
 
-# See full details by position number
-hermes show 1
+# Show a single notification in table form
+hermes list 1
 
-# Respond by position number
-hermes respond 1 restart
+# See full details and available actions
+hermes list --full 1
 
 # Respond interactively (TTY only, numbered menu)
 hermes respond 1
 
+# Respond directly (scripting)
+hermes respond 1 restart
+
 # Cancel by position number
 hermes cancel 1
-
-# Full IDs also work
-hermes show abc123def456
 
 # Scriptable pending-count check (100ms timeout, never blocks)
 hermes motd --oneline

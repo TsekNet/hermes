@@ -90,7 +90,6 @@ Use '--config' or '--local' to render directly without the service.`,
 	root.AddCommand(historyCmd())
 	root.AddCommand(stopCmd())
 	root.AddCommand(motdCmd())
-	root.AddCommand(showCmd())
 	root.AddCommand(respondCmd())
 	root.AddCommand(installCmd())
 	root.AddCommand(uninstallCmd())

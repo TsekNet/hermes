@@ -47,10 +47,10 @@ hermes --config notification.json
 hermes list
 
 # Show details and available actions by position number
-hermes show 1
+hermes list --full 1
 
 # Respond by position number (or interactively with no value)
-hermes respond 1 restart
+hermes respond 1
 
 # View notification history
 hermes history

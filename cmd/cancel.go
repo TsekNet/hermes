@@ -10,7 +10,7 @@ import (
 
 func cancelCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "cancel <notification-id or #>",
+		Use:   "cancel <#>",
 		Short: "Cancel an active notification",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -29,9 +29,9 @@ func cancelCmd() *cobra.Command {
 				return fmt.Errorf("cancel: %w", err)
 			}
 			if !found {
-				fmt.Printf("Notification %s not found or already completed.\n", id)
+				fmt.Println("Notification not found or already completed.")
 			} else {
-				fmt.Printf("Notification %s cancelled.\n", id)
+				fmt.Println("Notification cancelled.")
 			}
 			return nil
 		},
