@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/TsekNet/hermes/internal/client"
 	"github.com/TsekNet/hermes/internal/config"
 )
 
@@ -42,13 +43,13 @@ func TestShow_FullNotification(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := runShow(&buf, c, "abc123")
+	err := runShowByEntry(&buf, c, client.ListEntry{ID: "abc123"})
 	if err != nil {
-		t.Fatalf("runShow: %v", err)
+		t.Fatalf("runShowByEntry: %v", err)
 	}
 
 	out := buf.String()
-	for _, want := range []string{"Restart Required", "---", "restart", "Actions:", "[1]", "[2]", "Defer 1 hour", "hermes respond abc123"} {
+	for _, want := range []string{"Restart Required", "---", "restart", "Actions:", "[1]", "[2]", "Defer 1 hour", "hermes respond <#>"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output missing %q\ngot:\n%s", want, out)
 		}
@@ -60,7 +61,7 @@ func TestShow_NotFound(t *testing.T) {
 	c := &mockShowClient{err: fmt.Errorf("not found")}
 
 	var buf bytes.Buffer
-	err := runShow(&buf, c, "missing")
+	err := runShowByEntry(&buf, c, client.ListEntry{ID: "missing"})
 	if err == nil {
 		t.Fatal("expected error for not-found notification")
 	}
@@ -84,9 +85,9 @@ func TestShow_DropdownFlattened(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := runShow(&buf, c, "abc123")
+	err := runShowByEntry(&buf, c, client.ListEntry{ID: "abc123"})
 	if err != nil {
-		t.Fatalf("runShow: %v", err)
+		t.Fatalf("runShowByEntry: %v", err)
 	}
 
 	out := buf.String()
@@ -116,9 +117,9 @@ func TestShow_DeferFiltered(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	err := runShow(&buf, c, "abc123")
+	err := runShowByEntry(&buf, c, client.ListEntry{ID: "abc123"})
 	if err != nil {
-		t.Fatalf("runShow: %v", err)
+		t.Fatalf("runShowByEntry: %v", err)
 	}
 
 	out := buf.String()

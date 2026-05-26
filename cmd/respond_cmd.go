@@ -20,16 +20,14 @@ const maxInvalidAttempts = 5
 
 func respondCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "respond <notification-id or #> [value]",
+		Use:   "respond <#> [value]",
 		Short: "Respond to a notification",
 		Long: `Submit a response for an active notification. With a value argument,
 sends the response directly (works in any context including scripts).
-Without a value argument in a TTY, shows an interactive picker.
-The ID can be the full notification ID or a # from "hermes list".`,
-		Example: `  hermes respond 1 restart
-  hermes respond 1 defer_1h
-  hermes respond 1                   # interactive picker (TTY only)
-  hermes respond abc123def456 restart`,
+Without a value argument in a TTY, shows an interactive picker.`,
+		Example: `  hermes respond 1              # interactive picker (TTY only)
+  hermes respond 1 restart     # direct value (scripting)
+  hermes respond 1 defer_1h`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			c, err := client.Dial()
@@ -67,7 +65,7 @@ func runRespond(out io.Writer, in io.Reader, c respond.Client, id, value string,
 		if err != nil {
 			return 0, err
 		}
-		fmt.Fprintln(out, "Error: no value provided. Usage: hermes respond <id> <value>")
+		fmt.Fprintln(out, "Error: no value provided. Usage: hermes respond <#> <value>")
 		fmt.Fprintf(out, "Available actions: %s\n", buttonValues(buttons))
 		return 1, fmt.Errorf("no value provided and not a TTY")
 	}
@@ -80,7 +78,14 @@ func submitValue(out io.Writer, c respond.Client, id, value string) (int32, erro
 	if err != nil {
 		return 1, err
 	}
-	fmt.Fprintf(out, "Sent: %s\n", result.Value)
+	label := result.Value
+	for _, a := range config.FlattenActions(result.Buttons) {
+		if a.Value == result.Value {
+			label = a.Label
+			break
+		}
+	}
+	fmt.Fprintf(out, "Responded with: %s\n", label)
 	return result.ExitCode, nil
 }
 

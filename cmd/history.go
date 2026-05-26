@@ -75,17 +75,17 @@ func writeHistorySummary(out io.Writer, entries []app.HistoryEntry) error {
 	fmt.Fprintf(out, "%d notification(s):\n\n", len(entries))
 	for _, e := range entries {
 		if e.ActionRequired {
-			fmt.Fprintf(out, "  %-8s * %-30s (action required)\n", e.ID, e.Heading)
+			fmt.Fprintf(out, "  * %-30s (action required)\n", e.Heading)
 		} else {
 			created := e.CreatedAt
 			if t, err := time.Parse(time.RFC3339, e.CreatedAt); err == nil {
 				created = t.Local().Format("Jan 02 15:04")
 			}
-			fmt.Fprintf(out, "  %-8s   %-30s %-12s %s\n", e.ID, e.Heading, e.ResponseValue, created)
+			fmt.Fprintf(out, "    %-30s %-12s %s\n", e.Heading, e.ResponseValue, created)
 		}
 	}
 	fmt.Fprintln(out)
-	fmt.Fprintln(out, "* = action required. Use 'hermes list' for details, 'hermes respond <id> <value>' to act.")
+	fmt.Fprintln(out, "* = action required. Run 'hermes list' then 'hermes respond <#>' to act.")
 	return nil
 }
 

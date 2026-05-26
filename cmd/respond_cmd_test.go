@@ -64,8 +64,8 @@ func TestRespond_AcceptedChoice(t *testing.T) {
 	if c.reportedID != "abc123" || c.reportedValue != "restart" {
 		t.Errorf("ReportChoice called with (%q, %q), want (abc123, restart)", c.reportedID, c.reportedValue)
 	}
-	if !strings.Contains(buf.String(), "Sent: restart") {
-		t.Errorf("output missing 'Sent: restart'\ngot: %s", buf.String())
+	if !strings.Contains(buf.String(), "Responded with: Restart now") {
+		t.Errorf("output missing 'Responded with: Restart now'\ngot: %s", buf.String())
 	}
 }
 

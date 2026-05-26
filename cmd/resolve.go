@@ -25,12 +25,17 @@ func sortEntries(entries []client.ListEntry) {
 	})
 }
 
-// resolveID converts a user-provided argument to a real notification ID.
-// If arg parses as a positive integer under 16 digits, it's treated as a
-// 1-based position from "hermes list". Otherwise it's a passthrough ID.
-func resolveID(ctx context.Context, l Lister, arg string) (string, error) {
+func parsePosition(arg string) (int, bool) {
 	n, err := strconv.Atoi(arg)
 	if err != nil || len(arg) >= 16 {
+		return 0, false
+	}
+	return n, true
+}
+
+func resolveID(ctx context.Context, l Lister, arg string) (string, error) {
+	n, isPos := parsePosition(arg)
+	if !isPos {
 		return arg, nil
 	}
 	if n < 1 {
