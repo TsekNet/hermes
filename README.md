@@ -43,8 +43,14 @@ hermes notify '{"heading":"Restart Required","message":"Please restart.","button
 # Or use --config
 hermes --config notification.json
 
-# List active notifications
+# List active notifications (numbered)
 hermes list
+
+# Show details and available actions by position number
+hermes show 1
+
+# Respond by position number (or interactively with no value)
+hermes respond 1 restart
 
 # View notification history
 hermes history
@@ -95,6 +101,7 @@ The service tracks deferrals per notification, persisted to disk. When the user 
 | **Localization** | `heading_localized` / `message_localized` maps + `--locale` flag for multi-language notifications. |
 | **Dependencies** | Sequential workflows: notification B waits for notification A to complete. |
 | **Broadcast** | Run as SYSTEM/root, auto-delivers to all active user sessions. No wrapper scripts needed. |
+| **Terminal CLI** | Full interaction without a GUI: `hermes list`, `show`, `respond`, `cancel` with numbered positions. Interactive TTY picker. MOTD login banner for SSH sessions. |
 | **System tray icon** | Persistent notification-area icon with pending count and quick history access. Auto-detected on desktop sessions, skipped on headless. |
 | **App launcher shortcut** | "Hermes Notifications" in Start Menu / Spotlight / GNOME Activities. Searchable by name and "notifications" keyword. |
 

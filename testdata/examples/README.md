@@ -105,10 +105,38 @@ user@devbox:~$
   * Restart Required
   * VPN Update Available
   * Security Training Due
-Run 'hermes history' for details.
+Run 'hermes list' for details.
 ----------------------------------------
 
 user@devbox:~$
+```
+
+### Terminal CLI
+
+Full notification interaction without a GUI. Position numbers from `hermes list` work with `show`, `respond`, and `cancel`.
+
+```
+$ hermes list
+#   ID               HEADING              STATE              DEFERS   DEADLINE
+1   270c91acbcfd613a System Restart Requi  awaiting_response  0        none
+2   3585d04fee244851 VPN Disconnecting    awaiting_response  0        none
+
+Details: hermes show <#>    Respond: hermes respond <#> <value>
+
+$ hermes show 1
+System Restart Required
+-----------------------
+Your computer needs to restart to apply security updates.
+
+Actions:
+  [1] 1 Hour               (defer_1h)
+  [2] 4 Hours              (defer_4h)
+  [3] Restart Now           (restart)
+
+Respond: hermes respond 270c91acbcfd613a <value>
+
+$ hermes respond 1 restart
+Sent: restart
 ```
 
 ### Notification history
